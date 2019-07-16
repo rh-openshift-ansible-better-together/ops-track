@@ -48,18 +48,21 @@ For users who are running Windows and using PuTTY for SSH, follow the below dire
 6. Click Open.
 7. When prompted with the security alert, click Yes.
 
-Once you've got an active SSH session, you'll need to change to be the root user. 
+Once you've got an active SSH session, you'll need to change to be the root user by running the following command.
 
+```
+$ sudo su -
+```
 
 ## 1.0: Getting to know Ansible
 
-[UPDATE]To get to know Ansible, we're going to rely on a [quick slideshow](http://www.ansible.red), along with some live examples in your OpenShift cluster. You'll be running these commands from your cluster's bastion host, which is already configured with Ansible and an inventory that references your OpenShift cluster.
+To get to know Ansible, we're going to rely on a [quick slideshow](http://www.ansible.red), along with some live examples in your OpenShift cluster. You'll be running these commands from your cluster's bastion host, which is already configured with Ansible and an inventory that references your OpenShift cluster.
 
 ## 2.0: OpenShift Architecture
 
 In this section we'll discuss the fundamental components that make up OpenShift. Any ops-centric discussion of an application platform like OpenShift needs to start with containers; both technically and from a perspective of value. We'll start off talking about why containers are the best solution today to deliver your applications.
 
-We promise to not beat you up with slides after this, but we do have a few more. Let's use the [OpenShift Technical Overview]([INSERT URL HERE]) to become familiar with the core OpenShift concepts before we dive down into the fun details.
+We promise to not beat you up with slides after this, but we do have a few more. Let's use the [OpenShift Technical Overview](/openshift_technical_overview.pdf) to become familiar with the core OpenShift concepts before we dive down into the fun details.
 
 ### 2.1: The value of containers
 
