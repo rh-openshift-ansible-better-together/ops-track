@@ -32,14 +32,14 @@ There are a few different tools that you need in order to complete this lab:
 We have provisioned a virtual machine (bastion) that you will use to complete today's lab. To SSH to the bastion, you'll need the a private key. For users who are running Linux, macOS, or Windows with the Windows Subsystem for Linux installed, open up a terminal and run the following commands:
 
 ```
-curl -O [INSERT URL TO PEM HERE]
+curl --user better-together:<INSERT PASSWORD PROVIDED BY INSTRUCTOR> -O https://static-better-together.b9ad.pro-us-east-1.openshiftapps.com/ocp-workshop.pem
 chmod 600 ocp-workshop.pem
 ssh -i ocp-workshop.pem ec2-user@bastion.btws-<INSERT 4 RANDOM CHARACTERS PROVIDED BY THE INSTRUCTOR HERE>.openshiftworkshop.com
 ```
 
 For users who are running Windows and using PuTTY for SSH, follow the below directions:
 
-1. Download the private key in PuTTY format using your web browser. The key is located here: [INSERT URL TO PPK HERE]
+1. Download the private key in PuTTY format using your web browser. The key is located here: https://static-better-together.b9ad.pro-us-east-1.openshiftapps.com/ocp-workshop.ppk. You'll need to login with the username `better-together` and the password that is provided by the instructor.
 2. In PuTTY, under Category on the left, navigate to Connection → SSH → Auth.
 3. On the right under Authentication parameters, click Browse and locate the private key (ocp-workshop.ppk) you saved earlier.
 4. On the left, navigate to Session.
