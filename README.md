@@ -34,8 +34,7 @@ We have provisioned a virtual machine (bastion) that you will use to complete to
 ```
 curl -O [INSERT URL TO PEM HERE]
 chmod 600 ocp-workshop.pem
-export USER_ID=<INSERT 4 RANDOM CHARACTERS PROVIDED BY THE INSTRUCTOR HERE>
-ssh -i ocp-workshop.pem ec2-user@bastion.btws-$USER_ID.openshiftworkshop.com
+ssh -i ocp-workshop.pem ec2-user@bastion.btws-<INSERT 4 RANDOM CHARACTERS PROVIDED BY THE INSTRUCTOR HERE>.openshiftworkshop.com
 ```
 
 For users who are running Windows and using PuTTY for SSH, follow the below directions:
@@ -48,11 +47,14 @@ For users who are running Windows and using PuTTY for SSH, follow the below dire
 6. Click Open.
 7. When prompted with the security alert, click Yes.
 
-Once you've got an active SSH session, you'll need to change to be the root user by running the following command.
+Once you've got an active SSH session, you'll need to change to be the root user by running the following command and then we'll need to set your user ID for the workshop.
 
 ```
 $ sudo su -
+$ export USER_ID=<INSERT 4 RANDOM CHARACTERS PROVIDED BY THE INSTRUCTOR HERE>
 ```
+
+You are now ready to start working through the workshop.
 
 ## 1.0: Getting to know Ansible
 
@@ -132,35 +134,32 @@ Let's investigate what makes a container a container.
 
 The kernel component that makes the applications feel isolated are called namespaces. Namespaces are a lot like a two-way mirror or a paper wall inside Linux. Like a two-way mirror, from the host we can see inside the container. But from inside the container it can only see what's inside its namespace. And like a paper wall, namepsaces provide sufficient isolation but they're lightweight to stand up and tear down.
 
-[UPDATE]On your infrastructure node, log in as your student user and run the `sudo lsns` command. The output will be long, so let's look at the content towards the bottom.
+SSH to your infrastructure node by running the following command:
 
 ```
-$ sudo lsns
-NS TYPE  NPROCS   PID USER       COMMAND
-...
-4026533100 mnt        2 33456 ec2-user   /bin/sh /opt/eap/bin/standalone.sh -Djavax.net.s
-4026533101 uts        2 33456 ec2-user   /bin/sh /opt/eap/bin/standalone.sh -Djavax.net.s
-4026533102 pid        2 33456 ec2-user   /bin/sh /opt/eap/bin/standalone.sh -Djavax.net.s
-4026533103 mnt        1 33536 ec2-user   heapster --source=kubernetes.summary_api:${MASTE
-4026533104 uts        1 33536 ec2-user   heapster --source=kubernetes.summary_api:${MASTE
-4026533105 pid        1 33536 ec2-user   heapster --source=kubernetes.summary_api:${MASTE
-4026533106 mnt        5 35429 1000080000 /bin/bash /opt/app-root/src/run.sh
-4026533107 mnt        1 34734 student1   /usr/bin/pod
-4026533108 uts        1 34734 student1   /usr/bin/pod
-4026533109 ipc        7 34734 student1   /usr/bin/pod
+ssh infranode1.btatl-$USER_ID.internal
+```
+
+Next, run the `sudo lsns` command. The output will be long, so let's use `grep` to filter it. 
+
+```
+$ sudo lsns | grep heapster
+4026533532 mnt        1 43747 ec2-user   heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/tls.crt --tls_key=/heapster-certs/tls.key --tls_client_ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt --allowed_users=system:master-proxy --metric_resolution=30s --sink=hawkular:https://hawkular-metrics:443?tenant=_system&labelToTenant=pod_namespace&labelNodeId=nodename&caCert=/hawkular-metrics-certs/tls.crt&user=hawkular&pass=$HEAPSTER_PASSWORD&filter=label(container_name:^system.slice.*|^user.slice)&concurrencyLimit=5
+4026533536 uts        1 43747 ec2-user   heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/tls.crt --tls_key=/heapster-certs/tls.key --tls_client_ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt --allowed_users=system:master-proxy --metric_resolution=30s --sink=hawkular:https://hawkular-metrics:443?tenant=_system&labelToTenant=pod_namespace&labelNodeId=nodename&caCert=/hawkular-metrics-certs/tls.crt&user=hawkular&pass=$HEAPSTER_PASSWORD&filter=label(container_name:^system.slice.*|^user.slice)&concurrencyLimit=5
+4026533537 pid        1 43747 ec2-user   heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/tls.crt --tls_key=/heapster-certs/tls.key --tls_client_ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt --allowed_users=system:master-proxy --metric_resolution=30s --sink=hawkular:https://hawkular-metrics:443?tenant=_system&labelToTenant=pod_namespace&labelNodeId=nodename&caCert=/hawkular-metrics-certs/tls.crt&user=hawkular&pass=$HEAPSTER_PASSWORD&filter=label(container_name:^system.slice.*|^user.slice)&concurrencyLimit=5
 ```
 
 To limit this content to a single process, specify one of the PIDs on your system by using the `-p` parameter for `lsns`.
 
 ```
-$ sudo lsns -p34734
-NS TYPE  NPROCS   PID USER     COMMAND
-4026531837 user     210     1 root     /usr/lib/systemd/systemd --switched-root --system
-4026533107 mnt        1 34734 student1 /usr/bin/pod
-4026533108 uts        1 34734 student1 /usr/bin/pod
-4026533109 ipc        7 34734 student1 /usr/bin/pod
-4026533110 pid        1 34734 student1 /usr/bin/pod
-4026533112 net        7 34734 student1 /usr/bin/pod
+$ sudo lsns -p43747
+        NS TYPE  NPROCS   PID USER     COMMAND
+4026531837 user     354     1 root     /usr/lib/systemd/systemd --switched-root --system --deserialize 21
+4026533532 mnt        1 43747 ec2-user heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/
+4026533536 uts        1 43747 ec2-user heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/
+4026533537 pid        1 43747 ec2-user heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/
+4026534019 ipc        2 43618 1001     /usr/bin/pod
+4026534022 net        2 43618 1001     /usr/bin/pod
 ```
 
 Let's discuss 5 of these namespaces.
@@ -176,45 +175,69 @@ We can see this using the `nsenter` command line utility on your infrastructure 
 ```
 $ sudo ls -al /
 total 24
-dr-xr-xr-x.  18 root root  236 Nov  9 08:09 .
-dr-xr-xr-x.  18 root root  236 Nov  9 08:09 ..
-lrwxrwxrwx.   1 root root    7 Nov  9 08:09 bin -> usr/bin
-dr-xr-xr-x.   5 root root 4096 Nov  9 08:13 boot
-drwxr-xr-x.   2 root root    6 Nov 18  2017 data
-drwxr-xr-x.  18 root root 2760 Nov  9 08:13 dev
-drwxr-xr-x. 107 root root 8192 Nov  9 09:02 etc
-drwxr-xr-x.   4 root root   38 Dec 14  2017 home
-lrwxrwxrwx.   1 root root    7 Nov  9 08:09 lib -> usr/lib
-lrwxrwxrwx.   1 root root    9 Nov  9 08:09 lib64 -> usr/lib64
+dr-xr-xr-x.  18 root root  236 Mar 23  2018 .
+dr-xr-xr-x.  18 root root  236 Mar 23  2018 ..
+lrwxrwxrwx.   1 root root    7 Mar 23  2018 bin -> usr/bin
+dr-xr-xr-x.   5 root root 4096 Jul 15 18:35 boot
+drwxr-xr-x.   2 root root    6 Mar 23  2018 data
+drwxr-xr-x.  18 root root 2780 Jul 15 18:38 dev
+drwxr-xr-x.  99 root root 8192 Jul 15 18:53 etc
+drwxr-xr-x.   3 root root   22 Jul 15 18:26 home
+lrwxrwxrwx.   1 root root    7 Mar 23  2018 lib -> usr/lib
+lrwxrwxrwx.   1 root root    9 Mar 23  2018 lib64 -> usr/lib64
 drwxr-xr-x.   2 root root    6 Dec 14  2017 media
 drwxr-xr-x.   2 root root    6 Dec 14  2017 mnt
+drwxr-xr-x.   3 root root   17 Jul 15 18:53 opt
+dr-xr-xr-x. 366 root root    0 Jul 15 18:34 proc
+dr-xr-x---.   6 root root  234 Jul 16 16:02 root
+drwxr-xr-x.  38 root root 1140 Jul 15 18:53 run
+lrwxrwxrwx.   1 root root    8 Mar 23  2018 sbin -> usr/sbin
+drwxr-xr-x.   2 root root    6 Dec 14  2017 srv
+dr-xr-xr-x.  13 root root    0 Jul 15 18:34 sys
+drwxrwxrwt.  10 root root 4096 Jul 16 15:50 tmp
+drwxr-xr-x.  13 root root  155 Mar 23  2018 usr
+drwxr-xr-x.  20 root root  282 Jul 15 18:35 var
 ```
 
-After using `nsenter` to enter the mount namespace for the hawkular container (hawkular is part of the metrics gather system in OpenShift), you see that the root filesystem is different.
+Let's use `nsenter` to enter the mount namespace for the heapster container using the PID we got from the `lsns` command above. Once you enter that namespace, you can look at the root filesystem to see that it is different than what we saw before.
 
 ```
-$ sudo nsenter -m -t 33154[root@ip-172-16-87-199 /]# ll
+$ sudo nsenter -m -t 43747
+[root@infranode1 /]# ll
 total 0
-lrwxrwxrwx.   1 root root         7 Aug  1 13:02 bin -> usr/bin
-dr-xr-xr-x.   2 root root         6 Dec 14  2017 boot
-drwxrwsrwx.   4 root 1000040000  61 Nov  9 14:07 cassandra_data
-drwxr-xr-x.   5 root root       360 Nov  9 14:07 dev
-drwxr-xr-x.   1 root root        66 Nov  9 14:07 etc
-drwxrwsrwt.   3 root 1000040000 160 Nov  9 14:04 hawkular-cassandra-certs
-drwxr-xr-x.   1 root root        23 Sep 17 18:44 home
-lrwxrwxrwx.   1 root root         7 Aug  1 13:02 lib -> usr/lib
-lrwxrwxrwx.   1 root root         9 Aug  1 13:02 lib64 -> usr/lib64
-drwxr-xr-x.   2 root root         6 Dec 14  2017 media
+lrwxrwxrwx.   1 root root   7 Apr 16 15:25 bin -> usr/bin
+dr-xr-xr-x.   2 root root   6 Dec 14  2017 boot
+drwxr-xr-x.   5 root root 360 Jul 15 18:58 dev
+drwxr-xr-x.   1 root root  66 Jul 15 18:58 etc
+drwxrwxrwt.   3 root root 140 Jul 15 18:58 hawkular-account
+drwxrwxrwt.   3 root root 160 Jul 15 18:58 hawkular-metrics-certs
+drwxrwxrwt.   3 root root 120 Jul 15 18:58 heapster-certs
+drwxr-xr-x.   1 root root  22 May 24 22:08 home
+lrwxrwxrwx.   1 root root   7 Apr 16 15:25 lib -> usr/lib
+lrwxrwxrwx.   1 root root   9 Apr 16 15:25 lib64 -> usr/lib64
+drwxr-xr-x.   2 root root   6 Dec 14  2017 media
+drwxr-xr-x.   2 root root   6 Dec 14  2017 mnt
+drwxr-xr-x.   1 root root  62 May 24 22:08 opt
+dr-xr-xr-x. 367 root root   0 Jul 15 18:58 proc
+dr-xr-x---.   1 root root  27 Jul 16 16:01 root
+drwxr-xr-x.   1 root root  18 May 24 22:08 run
+lrwxrwxrwx.   1 root root   8 Apr 16 15:25 sbin -> usr/sbin
+drwxrwxrwt.   3 root root 100 Jul 15 18:58 secrets
+drwxr-xr-x.   2 root root   6 Dec 14  2017 srv
+dr-xr-xr-x.  13 root root   0 Jul 15 18:34 sys
+drwxrwxrwt.   1 root root   6 May 24 22:08 tmp
+drwxr-xr-x.   1 root root  28 Apr 16 15:25 usr
+drwxr-xr-x.   1 root root  52 Apr 16 15:25 var
 ```
 
-The container image for hawkular includes some of the fileystem like a normal server, but it also includes directories that are specific to the application.
+The container image for heapster includes some of the fileystem like a normal server, but it also includes directories that are specific to the application.
 
 #### 2.2.3.2: The uts namespace
 UTS stands for "Unix Time Sharing". This is a concept that has been around since the 1970's when it was a novel idea to allow multiple users to log in to a system simultaneously. If you run the command `uname -a`, the information returned is the UTS data structure from the kernel.
 
 ```
 $ uname -a
-Linux ip-172-16-87-199.ec2.internal 3.10.0-957.el7.x86_64 #1 SMP Thu Oct 4 20:48:51 UTC 2018 x86_64
+Linux infranode1.btatl-6e50.internal 3.10.0-957.21.3.el7.x86_64 #1 SMP Fri Jun 14 02:54:29 EDT 2019 x86_64 x86_64 x86_64 GNU/Linux
 ``` 
 
 Each container in OpenShift gets its own UTS namespace, which is equivalent to its own `uname -a` output. That means each container gets its own hostname and domain name. This is extremely useful in a large distributed application platform like OpenShift.
@@ -223,10 +246,10 @@ We can see this in action using `nsenter`.
 
 ```
 $ hostname
-ip-172-16-87-199.ec2.internal
-$ sudo nsenter -u -t 33154
-[root@hawkular-cassandra-1-w2vqb student1]# hostname
-hawkular-cassandra-1-w2vqb
+infranode1.btatl-6e50.internal
+$ sudo nsenter -u -t 43747
+[root@heapster-kclzv ec2-user]# hostname
+heapster-kclzv
 ```
 
 #### 2.2.3.3: The ipc namespace
@@ -314,18 +337,18 @@ $ ip a
 However, from within one of the containers on that node, you only see an `eth0` and `lo` interface.
 
 ```
-$ sudo nsenter -n -t 29774 ip a
-1: lo:  mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+$ sudo nsenter -n -t 43747 ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
     inet 127.0.0.1/8 scope host lo
        valid_lft forever preferred_lft forever
     inet6 ::1/128 scope host
        valid_lft forever preferred_lft forever
-3: eth0@if10:  mtu 8951 qdisc noqueue state UP group default
-    link/ether 0a:58:0a:81:00:04 brd ff:ff:ff:ff:ff:ff link-netnsid 0
-    inet 10.129.0.4/23 brd 10.129.1.255 scope global eth0
+3: eth0@if24: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 8951 qdisc noqueue state UP group default
+    link/ether 0a:58:0a:01:04:12 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 10.1.4.18/23 brd 10.1.5.255 scope global eth0
        valid_lft forever preferred_lft forever
-    inet6 fe80::d0c8:ecff:fe7a:4049/64 scope link
+    inet6 fe80::fc45:7aff:fe43:e99d/64 scope link
        valid_lft forever preferred_lft forever
 ```
 
