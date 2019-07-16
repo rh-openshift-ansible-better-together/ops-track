@@ -1,7 +1,26 @@
 # Better Together: OpenShift and Ansible Workshop - Ops Track
 
-## Table of Contents
-[INSERT TOC HERE]
+<!-- TOC depthFrom:2 -->
+
+- [0.1: Preparation](#01-preparation)
+- [1.0: Getting to know Ansible](#10-getting-to-know-ansible)
+- [2.0: OpenShift Architecture](#20-openshift-architecture)
+    - [2.1: The value of containers](#21-the-value-of-containers)
+    - [2.1.1: Worst case scenario provisioning](#211-worst-case-scenario-provisioning)
+    - [2.1.2: Comparing VM and container resource usage](#212-comparing-vm-and-container-resource-usage)
+        - [2.1.2.1: Storage resource consumption](#2121-storage-resource-consumption)
+        - [2.1.2.2: CPU and RAM resource consumption](#2122-cpu-and-ram-resource-consumption)
+    - [2.1.3: Summary](#213-summary)
+    - [2.2: How containers work](#22-how-containers-work)
+    - [2.2.1: What exacty is a container?](#221-what-exacty-is-a-container)
+    - [2.2.2: More effective process isolation](#222-more-effective-process-isolation)
+    - [2.2.3: Isolation with kernel namespaces](#223-isolation-with-kernel-namespaces)
+        - [2.2.3.1: The mount namespace](#2231-the-mount-namespace)
+        - [2.2.3.2: The uts namespace](#2232-the-uts-namespace)
+        - [2.2.3.3: The ipc namespace](#2233-the-ipc-namespace)
+        - [2.2.3.4: The pid namespace](#2234-the-pid-namespace)
+
+<!-- /TOC -->
 
 ## 0.1: Preparation
 
