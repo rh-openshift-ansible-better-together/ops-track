@@ -64,7 +64,7 @@ To get to know Ansible, we're going to rely on a [quick slideshow](http://www.an
 
 In this section we'll discuss the fundamental components that make up OpenShift. Any ops-centric discussion of an application platform like OpenShift needs to start with containers; both technically and from a perspective of value. We'll start off talking about why containers are the best solution today to deliver your applications.
 
-We promise to not beat you up with slides after this, but we do have a few more. Let's use the [OpenShift Technical Overview](/openshift_technical_overview.pdf) to become familiar with the core OpenShift concepts before we dive down into the fun details.
+We promise to not beat you up with slides after this, but we do have a few more. Let's use the [OpenShift Technical Overview](https://docs.google.com/presentation/d/1o92SA69qPN1RwY102Rr7QtS8Bj1cUWWlfND8JrctmAw/preview) to become familiar with the core OpenShift concepts before we dive down into the fun details.
 
 ### 2.1: The value of containers
 
