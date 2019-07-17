@@ -42,30 +42,39 @@
 - [4: A real world CI/CD scenario](#4-a-real-world-cicd-scenario)
   * [4.1: Creating a CI/CD workflow manually](#41-creating-a-cicd-workflow-manually)
   * [4.2: Automating application deployment with Ansible](#42-automating-application-deployment-with-ansible)
-- [5: Q&A and Wrap-Up](#5-qa-and-wrap-up)
+- [5: Troubleshooting Applications](#5-troubleshooting-applications)
+  * [5.1: Image Pull Failures](#51-image-pull-failures)
+  * [5.2: Application Crashing](#52-application-crashing)
+  * [5.3: Troubleshooting access to containers](#53-troubleshooting-access-to-containers)
+- [6: Q&A and Wrap-Up](#6-qa-and-wrap-up)
 
 ### 0: Preparation
 
-There are a few different tools that you need in order to complete this lab:
+Each workshop participant is provisioned their own OpenShift Container Platform 3.11 cluster (using Ansible!). Each cluster contains one master node, one infrastructure node, one application node, and one bastion host. You will be working from the bastion host to complete today's lab. 
 
-* `git`
-* `oc`
+You'll need to claim your OpenShift cluster using our [cluster assignment tool](https://red.ht/2JK4yYh). Once you get to the cluster assignment tool, you'll need two pieces of information:
 
-We have provisioned a virtual machine (bastion) that you will use to complete today's lab. To SSH to the bastion, you'll need the a private key. For users who are running Linux, macOS, or Windows with the Windows Subsystem for Linux installed, open up a terminal and run the following commands:
+* Lab Code: Better Together (`<Insert City Name Here>`) - Ops Track
+* Activation Key: `ansible+openshift`
+
+Once you enter the information into the cluster assignment tool, you'll receive a "GUID" in the format `btws-<4_random_characters>` (for example, `btws-j1e2`). It is important to keep this GUID handy for the rest of the lab. 
+
+To SSH to the bastion host, you'll need to download the private SSH key from the link provided in the cluster assignment tool. Select your operating system from the list and save the file to a location you know. 
+
+For users who are running Linux, macOS, or Windows with the Windows Subsystem for Linux installed, open up a terminal and run the following commands:
 
 ```
-curl --user better-together:<INSERT PASSWORD PROVIDED BY INSTRUCTOR> -O https://static-better-together.b9ad.pro-us-east-1.openshiftapps.com/ocp-workshop.pem
-chmod 600 ocp-workshop.pem
-ssh -i ocp-workshop.pem ec2-user@bastion.btws-<INSERT 4 RANDOM CHARACTERS PROVIDED BY THE INSTRUCTOR HERE>.openshiftworkshop.com
+chmod 600 /path/to/downloaded/key/ocp-workshop.pem
+ssh -i /path/to/downloaded/key/ocp-workshop.pem ec2-user@bastion.<INSERT_GUID_HERE>.openshiftworkshop.com
 ```
 
 For users who are running Windows and using PuTTY for SSH, follow the below directions:
 
-1. Download the private key in PuTTY format using your web browser. The key is located here: https://static-better-together.b9ad.pro-us-east-1.openshiftapps.com/ocp-workshop.ppk. You'll need to login with the username `better-together` and the password that is provided by the instructor.
+1. Open PuTTY. 
 2. In PuTTY, under Category on the left, navigate to Connection → SSH → Auth.
 3. On the right under Authentication parameters, click Browse and locate the private key (ocp-workshop.ppk) you saved earlier.
 4. On the left, navigate to Session.
-5. On the right in the Host Name field, ec2-user@bastion.btws-<INSERT 4 RANDOM CHARACTERS PROVIDED BY THE INSTRUCTOR HERE>.openshiftworkshop.com
+5. On the right in the Host Name field, ec2-user@bastion.<INSERT_GUID_HERE>.openshiftworkshop.com
 6. Click Open.
 7. When prompted with the security alert, click Yes.
 
@@ -73,7 +82,7 @@ Once you've got an active SSH session, you'll need to change to be the root user
 
 ```
 $ sudo su -
-$ export USER_ID=<INSERT 4 RANDOM CHARACTERS PROVIDED BY THE INSTRUCTOR HERE>
+$ export GUID=<INSERT_GUID_HERE>
 ```
 
 You are now ready to start working through the workshop.
@@ -159,7 +168,7 @@ The kernel component that makes the applications feel isolated are called namesp
 SSH to your infrastructure node by running the following command:
 
 ```
-ssh infranode1.btws-$USER_ID.internal
+ssh infranode1.$GUID.internal
 ```
 
 Next, run the `sudo lsns` command. The output will be long, so let's use `grep` to filter it. 
@@ -862,11 +871,17 @@ In the final section of our workshop, we'll take everything we've been discussin
 * Deplous the app into a dev project and runs integration tests
 * Builds a human break into the OpenShift UI to confirm before it promotes the application to the stage project
 
-This is a complete analog to a modern CI/CD workflow, implemented 100% within OpenShift. First, we'll need to create some projects for your CI/CD workflow to use. The content can be found on GitHub at https://github.com/siamaksade/openshift-cd-demo. This content has been downloaded already to your OpenShift control node at /root/cicd-demo. [UPDATE]
+This is a complete analog to a modern CI/CD workflow, implemented 100% within OpenShift. First, we'll need to create some projects for your CI/CD workflow to use. The content can be found on GitHub at https://github.com/siamaksade/openshift-cd-demo. Let's clone this to your bastion host and change to that directory. To do so, let's run the following commands:
+
+```
+cd ~
+git clone --branch ocp-3.11 https://github.com/siamaksade/openshift-cd-demo.git 
+cd openshift-cd-demo
+```
 
 ### 4.1: Creating a CI/CD workflow manually
 
-On your control node, run the following commands:
+Now, let's start creating the CI/CD workflow manually by running the following commands:
 ```
 oc new-project dev --display-name="Tasks - Dev"
 oc new-project stage --display-name="Tasks - Stage"
@@ -891,13 +906,13 @@ With your projects created, you're ready to deploy the demo and trigger the work
 oc new-app -n cicd -f cicd-template.yaml --param=DEPLOY_CHE=true
 ```
 
-This process doesn't take much time for a single application, but it doesn't scale well, it's not repeatable, and it relies on the person executing it knowing the commands, and the specific information about the situation. In the next section, we'll accomplish the same thing with a simple Ansible playbook, executed from your bastion host.
+This process doesn't take much time for a single application, but it doesn't scale well and it relies on the person executing it knowing the commands, as well as specific information about the situation. In the next section, we'll accomplish the same thing with a simple Ansible playbook, executed from your bastion host.
 
 ### 4.2: Automating application deployment with Ansible
 
-There are modules in Ansible for OpenShift, specifically the `k8s` module (also known as `k8s_raw` and `openshift_raw`). However, lots of interactions with OpenShift that you'll find in OpenShift playbooks still use the `command` module. There is minimal risk in doing so because the `oc` command itself is idempotent. With that being said, let's try using a combination of both methods. 
+There are modules in Ansible for OpenShift, specifically the `k8s` module (also known as `k8s_raw` and `openshift_raw`). However, lots of interactions with OpenShift that you'll find in OpenShift playbooks still use the `command` module. There is minimal risk in doing so because the `oc` command itself is idempotent. 
 
-A playbook that would create the entire CI/CD workflow could look as follows: [UPDATE]
+A playbook that would create the entire CI/CD workflow could look as follows:
 
 ```
 ---
@@ -923,4 +938,238 @@ tasks:
 
 This playbook is relatively simple, with a single `with_items` loop. What sort of additional enhancements can you think of to make this playbook more powerful to deploy workflows inside OpenShift?
 
-## 5: Q&A and Wrap-Up
+## 5: Troubleshooting Applications
+
+Below are common application troubleshooting techniques to use when things aren't working quite right in your cluster. 
+
+### 5.1: Image Pull Failures
+
+When an image pull fails, it is important to consider the various reasons as to why an image pull may fail. Examples include: 
+
+* The image tag is incorrect
+* The image doesn’t exist (or is stored in a different registry)
+* OpenShift doesn’t have the proper permissions to pull that image
+
+To demonstrate this, let's first create a project to play with by running the following command:
+
+```
+$ oc new-project troubleshooting
+Now using project "troubleshooting" on server "https://master.btatl-6e50.openshiftworkshop.com:443".
+
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app django-psql-example
+```
+
+Next, let's attempt to deploy a container image with a typo to demonstrate this issue. 
+
+```
+$ oc run fail --image=rh/fail-exit:latest
+kubectl run --generator=deploymentconfig/v1 is DEPRECATED and will be removed in a future version. Use kubectl run --generator=run-pod/v1 or kubectl create instead.
+deploymentconfig.apps.openshift.io/fail created
+```
+
+Ignore the deprecated message and let's check the status of the pod:
+
+```
+$ oc get pods
+NAME            READY   STATUS             RESTARTS   AGE
+fail-1-deploy   1/1     Running            0          1m
+fail-1-gd5pt    0/1     ImagePullBackOff   0          1m
+```
+
+Now, let's look at the events for the pod that is stuck in ImagePullBackOff by running oc describe pod:
+
+```
+$ oc describe pod/fail-1-gd5pt
+```
+
+As we can see under the _Events_ section, the pod failed because it could not find the image.
+
+```
+Name:               fail-1-gd5pt
+Namespace:          troubleshooting
+Priority:           0
+PriorityClassName:  <none>
+Node:               node1.btatl-6e50.internal/192.168.0.71
+Start Time:         Wed, 17 Jul 2019 12:24:13 -0400
+Labels:             deployment=fail-1
+                    deploymentconfig=fail
+                    run=fail
+Annotations:        kubernetes.io/limit-ranger: LimitRanger plugin set: cpu, memory request for container fail; cpu, memory limit for container fail
+                    openshift.io/deployment-config.latest-version: 1
+                    openshift.io/deployment-config.name: fail
+                    openshift.io/deployment.name: fail-1
+                    openshift.io/scc: restricted
+Status:             Pending
+IP:
+Controlled By:      ReplicationController/fail-1
+Containers:
+  fail:
+    Container ID:
+    Image:          rh/fail-exit:latest
+    Image ID:
+    Port:           <none>
+    Host Port:      <none>
+    State:          Waiting
+      Reason:       ImagePullBackOff
+    Ready:          False
+    Restart Count:  0
+    Limits:
+      cpu:     500m
+      memory:  1536Mi
+    Requests:
+      cpu:        50m
+      memory:     256Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-wrx8q (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             False
+  ContainersReady   False
+  PodScheduled      True
+Volumes:
+  default-token-wrx8q:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  default-token-wrx8q
+    Optional:    false
+QoS Class:       Burstable
+Node-Selectors:  node-role.kubernetes.io/compute=true
+Tolerations:     node.kubernetes.io/memory-pressure:NoSchedule
+Events:
+  Type     Reason          Age                    From                                Message
+  ----     ------          ----                   ----                                -------
+  Normal   Scheduled       2m29s                  default-scheduler                   Successfully assigned troubleshooting/fail-1-gd5pt to node1.btatl-6e50.internal
+  Normal   Pulling         2m13s (x2 over 2m26s)  kubelet, node1.btatl-6e50.internal  pulling image "rh/fail-exit:latest"
+  Warning  Failed          2m11s (x2 over 2m24s)  kubelet, node1.btatl-6e50.internal  Failed to pull image "rh/fail-exit:latest": rpc error: code = Unknown desc = repository docker.io/rh/fail-exit not found: does not exist or no pull access
+  Warning  Failed          2m11s (x2 over 2m24s)  kubelet, node1.btatl-6e50.internal  Error: ErrImagePull
+  Normal   SandboxChanged  2m5s (x7 over 2m23s)   kubelet, node1.btatl-6e50.internal  Pod sandbox changed, it will be killed and re-created.
+  Normal   BackOff         2m3s (x6 over 2m22s)   kubelet, node1.btatl-6e50.internal  Back-off pulling image "rh/fail-exit:latest"
+  Warning  Failed          2m3s (x6 over 2m22s)   kubelet, node1.btatl-6e50.internal  Error: ImagePullBackOff
+```
+
+Now that we've seen that it is broken, let's fix it. The proper image is located at quay.io/redhat/fail-exit. Let's patch the deployment config with the updated image:
+
+```
+$ oc patch dc/fail --patch='{"spec":{"template":{"spec":{"containers":[{"name": "fail", "image":"quay.io/redhat/fail-exit:latest"}]}}}}'
+```
+
+Now let's check the status of the pod again:
+
+```
+NAME            READY   STATUS             RESTARTS   AGE
+fail-1-deploy   0/1     Error              0          20m
+fail-2-deploy   1/1     Running            0          1m
+fail-2-ssh7k    0/1     CrashLoopBackOff   3          1m
+```
+
+Well, we've fixed the image pull error, but now we've got a new error. Move on to the next section to troubleshoot this issue.
+
+### 5.2: Application Crashing
+
+Now that we have a pod that is in a `CrashLoopBackOff` state, we need to figure out why the container is failing:
+
+```
+$ oc get pods
+NAME            READY   STATUS             RESTARTS   AGE
+fail-1-deploy   0/1     Error              0          20m
+fail-2-deploy   1/1     Running            0          1m
+fail-2-ssh7k    0/1     CrashLoopBackOff   3          1m
+```
+
+Now, let's take another look at the detailed status of the pod to see what is going on. Specifically, we want to investigate the `Reason` under the `State` property, so let's use grep to limit our output:
+
+```
+$ oc describe pod/fail-2-ssh7k | grep -E "State:|Reason:"
+    State:          Waiting
+      Reason:       CrashLoopBackOff
+    Last State:     Terminated
+      Reason:       Error
+```
+
+We can also take a look at the crash data from the _Events_ tab in the crash looping pod.
+
+![The events of a crash looping pod](/images/failing_events.png)
+
+Now that we've found that the container is exiting with a status of 1, I can let you in on the secret: This container image's command is "exit 1". You can check out the dockerfile [here](/fail.Dockerfile).
+
+Now that we've gotten here, let's go ahead and delete this deployment config and move on to some other troubleshooting exercies. 
+
+```
+$ oc delete dc/fail
+```
+
+### 5.3: Troubleshooting access to containers  
+
+Next, let's talk about how to troubleshoot access to your pods and containers from external endpoints and internal endpoints.
+
+First, a few important pieces of information: 
+* [Troubleshooting OpenShift SDN](https://docs.openshift.com/container-platform/3.11/admin_guide/sdn_troubleshooting.html#overview)
+* [List of HTTP status codes](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes)  
+  - 1xx (Informational): The request was received, continuing process
+  - 2xx (Successful): The request was successfully received, understood, and accepted
+  - 3xx (Redirection): Further action needs to be taken in order to complete the request
+  - 4xx (Client Error): The request contains bad syntax or cannot be fulfilled  
+  - 5xx (Server Error): The server failed to fulfill an apparently valid request
+
+Next, let's deploy a quick sample application to work with:
+
+```
+$ oc new-app --name=network-example https://github.com/jboss-openshift/openshift-quickstarts --context-dir=undertow-servlet -i java:latest
+```
+
+Now let's expose the service externally to the internet and store that hostname in a variable:
+
+```
+$ oc expose svc/network-example
+$ ENDPOINT=http://$(oc get route | grep network-example | awk '{print $2}')
+```
+
+Now, let's debug external access to the service:
+
+```
+$ curl -kv $ENDPOINT
+* Rebuilt URL to: http://network-example-troubleshooting.apps.btatl-6e50.openshiftworkshop.com/
+*   Trying 3.218.186.47...
+* TCP_NODELAY set
+* Connected to network-example-troubleshooting.apps.btatl-6e50.openshiftworkshop.com (3.218.186.47) port 80 (#0)
+> GET / HTTP/1.1
+> Host: network-example-troubleshooting.apps.btatl-6e50.openshiftworkshop.com
+> User-Agent: curl/7.54.0
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Content-Length: 11
+< Date: Wed, 17 Jul 2019 17:13:45 GMT
+< Set-Cookie: bdf8c5d069e23263d0c1d884fb88fb93=475e6f2c7603354e481c3a155c346c41; path=/; HttpOnly
+< Cache-control: private
+<
+* Connection #0 to host network-example-troubleshooting.apps.btatl-6e50.openshiftworkshop.com left intact
+```
+
+Note that the HTTP response code is 200, so all appears to be well with this application. 
+
+Let's do a few other troubleshooting steps while we're at it, just to make sure all is well. First, let's check to make sure that the DNS properly resolves: 
+
+```
+$ dig +short $ENDPOINT
+3.218.186.47
+```
+
+Now let's take that IP address and verify that you can access port 80:
+
+```
+$ telnet 3.218.186.47 80
+Trying 3.218.186.47...
+Connected to ec2-3-218-186-47.compute-1.amazonaws.com.
+Escape character is '^]'.
+^]
+telnet> quit
+Connection closed.
+```
+
+All looks well with this external route, let's move on!
+
+## 6: Q&A and Wrap-Up
