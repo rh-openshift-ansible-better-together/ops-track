@@ -9,7 +9,7 @@
       - [2.1.2.1: Storage resource consumption](#2121-storage-resource-consumption)
       - [2.1.2.2: CPU and RAM resource consumption](#2122-cpu-and-ram-resource-consumption)
     + [2.1.3: Summary](#213-summary)
-    + [2.2: How containers work](#22-how-containers-work)
+  * [2.2: How containers work](#22-how-containers-work)
     + [2.2.1: What exactly is a container?](#221-what-exactly-is-a-container)
     + [2.2.2: More effective process isolation](#222-more-effective-process-isolation)
     + [2.2.3: Isolation with kernel namespaces](#223-isolation-with-kernel-namespaces)
@@ -141,7 +141,7 @@ Containers aren't just a tool to help developers create applications more quickl
 
 OpenShift deployed into your existing datacenter gives you back resources. For customers deep into their transformation with OpenShfit, an exponential increase in resource density isn't uncommon.
 
-#### 2.2: How containers work
+### 2.2: How containers work
 
 You can find five different container experts and ask them to define what a container is, and you're likely to get five different answers. The following are some of our personal favorites, all of which are correct from a certain perspective:
 
