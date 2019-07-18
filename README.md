@@ -1101,7 +1101,7 @@ We can also take a look at the crash data from the _Events_ tab in the crash loo
 
 ![The events of a crash looping pod](/images/failing_events.png)
 
-Now that we've found that the container is exiting with a status of 1, I can let you in on the secret: This container image's command is "exit 1". You can check out the dockerfile [here](/fail.Dockerfile).
+Now that we've found that the container is exiting with a status of 1, I can let you in on the secret: This container image's command is "exit 1". You can check out the dockerfile [here](/resources/fail.Dockerfile).
 
 Now that we've gotten here, let's go ahead and delete this deployment config and move on to some other troubleshooting exercises. 
 
