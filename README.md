@@ -71,12 +71,12 @@ ssh -i <INSERT_PATH_TO_PRIVATE_KEY>/ocp-workshop.pem ec2-user@bastion.<INSERT_GU
 For users who are running Windows and using PuTTY for SSH, follow the below directions:
 
 1. Open PuTTY. 
-2. In PuTTY, under Category on the left, navigate to Connection → SSH → Auth.
-3. On the right under Authentication parameters, click Browse and locate the private key (ocp-workshop.ppk) you saved earlier.
-4. On the left, navigate to Session.
-5. On the right in the Host Name field, ec2-user@bastion.<INSERT_GUID_HERE>.openshiftworkshop.com
-6. Click Open.
-7. When prompted with the security alert, click Yes.
+2. In PuTTY, under _Category_ on the left, navigate to _Connection_ -> _SSH_ -> _Auth_.
+3. On the right under _Authentication_ parameters, click _Browse_ and locate the private key (ocp-workshop.ppk) you saved earlier.
+4. On the left, navigate to _Session_.
+5. On the right in the _Host Name_ field, ec2-user@bastion.<INSERT_GUID_HERE>.openshiftworkshop.com
+6. Click _Open_.
+7. When prompted with the security alert, click _Yes_.
 
 Once you've got an active SSH session, you'll need to change to be the root user by running the following command and then we'll need to set your user ID for the workshop.
 
