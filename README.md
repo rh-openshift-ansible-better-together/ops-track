@@ -54,7 +54,7 @@ Each workshop participant is provisioned their own OpenShift Container Platform 
 
 You'll need to claim your OpenShift cluster using our [cluster assignment tool](https://red.ht/2JK4yYh). Once you get to the cluster assignment tool, you'll need two pieces of information:
 
-* Lab Code: Better Together (`<Insert City Name Here>`) - Ops Track
+* Lab Code: `Better Together (<Insert City Name Here>) - Ops Track`
 * Activation Key: `ansible+openshift`
 
 Once you enter the information into the cluster assignment tool, you'll receive a "GUID" in the format `btws-<4_random_characters>` (for example, `btws-j1e2`). It is important to keep this GUID handy for the rest of the lab. 
@@ -84,6 +84,14 @@ Once you've got an active SSH session, you'll need to change to be the root user
 $ sudo su -
 $ export GUID=<INSERT_GUID_HERE>
 ```
+
+And finally, we need to login to the OpenShift cluster using the `oc` tools. To do so, run the following command:
+
+```
+$ oc login https://master.<INSERT_GUID_HERE>.openshiftworkshop.com
+```
+
+When prompted, login with the username `opentlc-mgr` and the password that is provided in the cluster assignment tool.
 
 You are now ready to start working through the workshop.
 
@@ -309,7 +317,7 @@ In the Linux world, PID 1 is an important concept. PID 1 is the process that sta
   6486 ?        00:03:01 httpd
   ```
 
-When you execute the same command from inside the PID namespace, you see a different result. For this example, instead of using `nsenter`, we'll use the `oc exec` command from our control node. It does the same thing, with the primary difference being that we don't need to know the application node the container is deployed to, or its actual PID.
+When you execute the same command from inside the PID namespace, you see a different result. For this example, instead of using `nsenter`, we'll use the `oc exec` command from our infrastructure node. It does the same thing, with the primary difference being that we don't need to know the application node the container is deployed to, or its actual PID.
 
 ```
 $ oc exec app-cli-4-18k2s ps
@@ -398,7 +406,7 @@ Linux kernel namespaces are used to isolate processes running inside containers.
 
 Kernel Control Groups are how containers (and other things like VMs and even clever sysadmins) limit the resources available to a given process. Nothing fixes bad code. But with control groups in place, it can become restarting a single service when it crashes instead of restarting the entire server.
 
-In OpenShift, control groups are used to deploy resource limit and requests. Let's set up some limits for applications in a new project that we'll call `image-uploader`. Let's create a new project using our control node.
+In OpenShift, control groups are used to deploy resource limit and requests. Let's set up some limits for applications in a new project that we'll call `image-uploader`. Let's create a new project using our bastion host.
 
 ##### 2.2.4.1: Creating projects
 Applications deployed in OpenShift are separated into projects. Projects are used not only as logical separators, but also as a reference for RBAC and networking policies that we'll discuss later. To create a new project, use the oc new-project command.
@@ -422,7 +430,7 @@ OpenShift Limits are per-project maximums for various objects like number of con
 
 ##### 2.2.4.3: Creating limits and requests for a project
 
-The first thing we'll create for the Image Uploader project is a collection of Limits. This is done, like most things in OpenShift, by creatign a YAML file and having OpenShift process it. On your control node, create a file named `/root/core-resource-limits.yaml`. It should contain the following content.
+The first thing we'll create for the Image Uploader project is a collection of Limits. This is done, like most things in OpenShift, by creatign a YAML file and having OpenShift process it. On your bastion host, create a file named `/root/core-resource-limits.yaml`. It should contain the following content.
 
 ```
 apiVersion: "v1"
@@ -470,7 +478,7 @@ NAME                   AGE
 core-resource-limits   2m
 ```
 
-The limitrange you just created applies to any applications deployed in the `image-uploader` project. Next, you're going to create resource limits for the entire project. Create a file named `/root/compute-resources.yaml` on your control node. It should contain the following content.
+The limitrange you just created applies to any applications deployed in the `image-uploader` project. Next, you're going to create resource limits for the entire project. Create a file named `/root/compute-resources.yaml` on your bastion host. It should contain the following content.
 
 ```
 apiVersion: v1
@@ -691,7 +699,7 @@ Using a single command, you just scaled your application from 1 instance to 3 in
 
 #### 2.3.5: Using the web interface
 
-The web interface for OpenShift makes additional assumptions when its used. The biggest difference you'll notice compared to the CLI is that routes are automatically created when applications are deployed. This can be altered, but it is the default behavior. To get started, browse to the OpenShift console using HTTPS and log in using your admin username provided by your instructor.
+The web interface for OpenShift makes additional assumptions when its used. The biggest difference you'll notice compared to the CLI is that routes are automatically created when applications are deployed. This can be altered, but it is the default behavior. To get started, browse to the OpenShift Console URL provided by the cluster assignment tool (it will be in the format of https://master.<INSERT_GUID_HERE>.openshiftworkshop.com/console), and login with the username `opentlc-mgr` and the password provided by the cluster assignment tool.
 
 ![OpenShift Container Platform Login Page](/images/ocp_login.png)
 
