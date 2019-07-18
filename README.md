@@ -1058,7 +1058,7 @@ Events:
   Warning  Failed          2m3s (x6 over 2m22s)   kubelet, node1.btatl-6e50.internal  Error: ImagePullBackOff
 ```
 
-Now that we've seen that it is broken, let's fix it. The proper image is located at quay.io/redhat/fail-exit. Let's patch the deployment config with the updated image:
+Now that we've seen that it is broken, let's fix it. The proper image is located at `quay.io/redhat/fail-exit`. Let's patch the deployment config with the updated image:
 
 ```
 $ oc patch dc/fail --patch='{"spec":{"template":{"spec":{"containers":[{"name": "fail", "image":"quay.io/redhat/fail-exit:latest"}]}}}}'
