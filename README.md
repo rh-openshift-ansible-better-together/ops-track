@@ -54,18 +54,18 @@ Each workshop participant is provisioned their own OpenShift Container Platform 
 
 You'll need to claim your OpenShift cluster using our [cluster assignment tool](https://red.ht/2JK4yYh). Once you get to the cluster assignment tool, you'll need two pieces of information:
 
-* Lab Code: `Better Together (<Insert City Name Here>) - Ops Track`
+* Lab Code: `Better Together (<INSERT CITY CODE HERE>) - Ops Track`
 * Activation Key: `ansible+openshift`
 
-Once you enter the information into the cluster assignment tool, you'll receive a "GUID" in the format `btws-<4_random_characters>` (for example, `btws-j1e2`). It is important to keep this GUID handy for the rest of the lab. 
+Once you enter the information into the cluster assignment tool, you'll receive a few pieces of information. It is important to keep this window open during the workshop. The first (and one of the most important) pieces of information you will receive is a "GUID" in the format `btws-<4_RANDOM_CHARACTERS>` (for example, `btws-j1e2`). It is important to keep this GUID handy for the rest of the lab. 
 
-To SSH to the bastion host, you'll need to download the private SSH key from the link provided in the cluster assignment tool. Select your operating system from the list and save the file to a location you know. 
+To SSH to the bastion host, you'll need to download the private SSH key from the link provided in the cluster assignment tool. Select your operating system from the list and save the file to a location you remember. 
 
 For users who are running Linux, macOS, or Windows with the Windows Subsystem for Linux installed, open up a terminal and run the following commands:
 
 ```
-chmod 600 /path/to/downloaded/key/ocp-workshop.pem
-ssh -i /path/to/downloaded/key/ocp-workshop.pem ec2-user@bastion.<INSERT_GUID_HERE>.openshiftworkshop.com
+chmod 600 <INSERT_PATH_TO_PRIVATE_KEY>/ocp-workshop.pem
+ssh -i <INSERT_PATH_TO_PRIVATE_KEY>/ocp-workshop.pem ec2-user@bastion.<INSERT_GUID_HERE>.openshiftworkshop.com
 ```
 
 For users who are running Windows and using PuTTY for SSH, follow the below directions:
