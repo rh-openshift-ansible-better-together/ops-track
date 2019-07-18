@@ -55,7 +55,7 @@ Each workshop participant is provisioned their own OpenShift Container Platform 
 You'll need to claim your OpenShift cluster using our [cluster assignment tool](https://red.ht/2JK4yYh). Once you get to the cluster assignment tool, you'll need two pieces of information:
 
 * Lab Code: `Better Together (<INSERT CITY CODE HERE>) - Ops Track`
-* Activation Key: `ansible+openshift`
+* Activation Key: `ansible+openshift` 
 
 Once you enter the information into the cluster assignment tool, you'll receive a few pieces of information. It is important to keep this window open during the workshop. The first (and one of the most important) pieces of information you will receive is a "GUID" in the format `btws-<4_RANDOM_CHARACTERS>` (for example, `btws-j1e2`). It is important to keep this GUID handy for the rest of the lab. 
 
@@ -147,7 +147,7 @@ The same is true for CPU consumption. In OpenShift, we measure and allocate CPUs
 
 Containers aren't just a tool to help developers create applications more quickly. Containers take any application and deploy it more efficiently in your infrastructure. Instead of measuring each application in gigabytes used and vCPUs allocated, we measure containers using megabytes and millicores allocated.
 
-OpenShift deployed into your existing datacenter gives you back resources. For customers deep into their transformation with OpenShfit, an exponential increase in resource density isn't uncommon.
+OpenShift deployed into your existing datacenter gives you back resources. For customers deep into their transformation with OpenShift, an exponential increase in resource density isn't uncommon.
 
 ### 2.2: How containers work
 
@@ -395,11 +395,11 @@ Each container's network namespace has a single outbound interface (`eth0`) and 
 
 ##### 2.2.3.6: The user namespace
 
-Currently in OpenShift, all containers share a single user namespace. This is due to some lingering performance issues with the user namespace that prevent it from being capable of handling the enterpise scale that OpenShift is designed for. Don't worry, we're working on it.
+Currently in OpenShift, all containers share a single user namespace. This is due to some lingering performance issues with the user namespace that prevent it from being capable of handling the enterprise scale that OpenShift is designed for. Don't worry, we're working on it.
 
 ##### 2.2.3.7: Summary
 
-Linux kernel namespaces are used to isolate processes running inside containers. They're more lightweight than virtulization technologies and don't require an entire virtualized kernel to function properly. From inside a container, namespaced resources are fully isolated, but can still be viewed and accessed when needed from the host and from OpenShift.
+Linux kernel namespaces are used to isolate processes running inside containers. They're more lightweight than virtualization technologies and don't require an entire virtualized kernel to function properly. From inside a container, namespaced resources are fully isolated, but can still be viewed and accessed when needed from the host and from OpenShift.
 
 
 #### 2.2.4: Quotas and Limits with kernel control groups
@@ -430,7 +430,7 @@ OpenShift Limits are per-project maximums for various objects like number of con
 
 ##### 2.2.4.3: Creating limits and requests for a project
 
-The first thing we'll create for the Image Uploader project is a collection of Limits. This is done, like most things in OpenShift, by creatign a YAML file and having OpenShift process it. On your bastion host, create a file named `/root/core-resource-limits.yaml`. It should contain the following content.
+The first thing we'll create for the Image Uploader project is a collection of Limits. This is done, like most things in OpenShift, by creating a YAML file and having OpenShift process it. On your bastion host, create a file named `/root/core-resource-limits.yaml`. It should contain the following content.
 
 ```
 apiVersion: "v1"
@@ -511,7 +511,7 @@ NAME                AGE
 compute-resources   1m
 ```
 
-We're almost done! So fare we've define resource limits for both apps and the entire `image-uploader` project. These are controlled under the convers by control groups in the Linux kernel. But to be safe, we also need to define limits to the numbers of kubernetes objects that can be deployed in the `image-uploader` project. To do this, create a file named `/root/core-object-counts.yaml` with the following content.
+We're almost done! So fare we've define resource limits for both apps and the entire `image-uploader` project. These are controlled under the covers by control groups in the Linux kernel. But to be safe, we also need to define limits to the numbers of Kubernetes objects that can be deployed in the `image-uploader` project. To do this, create a file named `/root/core-object-counts.yaml` with the following content.
 
 ```
 apiVersion: v1
@@ -545,7 +545,7 @@ compute-resources    9m
 core-object-counts   1m
 ```
 
-The resource guardrails provided by control groups inside OpenShift are invaluable to an Ops team. We can't run around looking at every container that comes or go. We have to be able to programatically define flexible quotas and requests for our developers. All of this information is available in the OpenShift web interface, so your devs have no excuse for not knowing what they're using and how much they have left.
+The resource guardrails provided by control groups inside OpenShift are invaluable to an Ops team. We can't run around looking at every container that comes or go. We have to be able to programmatically define flexible quotas and requests for our developers. All of this information is available in the OpenShift web interface, so your devs have no excuse for not knowing what they're using and how much they have left.
 
 #### 2.2.5: Protection with SELinux
 
@@ -715,7 +715,7 @@ To deploy an application from the web interface, click the _Add To Project_ butt
 
 ![Add to Project -> Browse Catalog Menu in OpenShift Container Platform](/images/ocp_add_to_project.png)
 
-This button brings up the Service Catalog. The 100+ templates available in today's lab are just what's available out of the box in OpenShift. You and your developers can also create custom templates and add them to a single project or make them avaialable to your entire cluster. Other platforms can also be integrated into your OpenShift Catalog. Ansible, AWS, Azure, and other service brokers are available for integration with OpenShift today.
+This button brings up the Service Catalog. The 100+ templates available in today's lab are just what's available out of the box in OpenShift. You and your developers can also create custom templates and add them to a single project or make them available to your entire cluster. Other platforms can also be integrated into your OpenShift Catalog. Ansible, AWS, Azure, and other service brokers are available for integration with OpenShift today.
 
 ![OpenShift Service Catalog view inside of the Application Console](/images/ocp_service_catalog.png)
 
@@ -739,7 +739,7 @@ Next, let's take a quick look at what is going on with your newly deployed appli
 
 OpenShift uses a complex software-defined network solution using [Open vSwitch (OVS)](https://www.openvswitch.org/) that creates multiple interfaces for each container and routes traffic through VXLANs to other nodes in the cluster or through a TUN interface to route out of your cluster and into other networks.
 
-At a fundamental level, OpenShift creates an OVS bridge and attaches a TUN and VXLAN interface. The VXLAN interface routes requests between nodes on the cluster, and the TUN interface routes traffic off of the cluster using the node's default gateway. Each container also cretes a `veth` interface that is linked to the `eth0` interface in a specific container using [kernel interface linking](https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-net). You can see this on your nodes by running the `ovs-vsct list-br` command.
+At a fundamental level, OpenShift creates an OVS bridge and attaches a TUN and VXLAN interface. The VXLAN interface routes requests between nodes on the cluster, and the TUN interface routes traffic off of the cluster using the node's default gateway. Each container also creates a `veth` interface that is linked to the `eth0` interface in a specific container using [kernel interface linking](https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-net). You can see this on your nodes by running the `ovs-vsct list-br` command.
 
 ```
 $ ovs-vsctl list-br
@@ -764,7 +764,7 @@ Logically, the networking configuration on an OpenShift node looks like the grap
 
 ![OpenShift Networking Diagram](/images/ocp_networking_node.png)
 
-When networking isn't working as you expect, and you've already ruled out DNS (for the 5th time), keep this architecture in mind as you are troubleshooting your cluster. There's no magic invovled; only technologies that have proven themselves for years in production.
+When networking isn't working as you expect, and you've already ruled out DNS (for the 5th time), keep this architecture in mind as you are troubleshooting your cluster. There's no magic involved; only technologies that have proven themselves for years in production.
 
 #### 2.3.7: Routing layer
 
@@ -841,7 +841,7 @@ The deployment process takes 30-40 minutes to complete, depending on the size of
 
 ### 3.2: Modifying an OpenShift cluster
 
-In additon to deploying OpenShift, Ansible is used to modify your existing cluster. These playbooks are also located in `/usr/share/ansible/openshift-ansible/`. They can do things such as:
+In addition to deploying OpenShift, Ansible is used to modify your existing cluster. These playbooks are also located in `/usr/share/ansible/openshift-ansible/`. They can do things such as:
 
 * Adding a node to your cluster
 * Deploying OpenShift Container Storage (OCS)
@@ -871,12 +871,12 @@ Next, we'll take a look at an OpenShift deployment that provides everything you 
 
 In the final section of our workshop, we'll take everything we've been discussing and put it into practice with a large, complex, real-work workflow. In your cluster, you'll create multiple projects and use a Jenkins pipeline workflow that:
 
-* Checks out source code from a git server within Openshift
+* Checks out source code from a git server within OpenShift
 * Builds a java application and archives it in Nexus
 * Runs unit tests for the application
-* Runs code analysis using Sonarqube
+* Runs code analysis using SonarQube
 * Builds a Wildfly container image
-* Deplous the app into a dev project and runs integration tests
+* Deploys the app into a dev project and runs integration tests
 * Builds a human break into the OpenShift UI to confirm before it promotes the application to the stage project
 
 This is a complete analog to a modern CI/CD workflow, implemented 100% within OpenShift. First, we'll need to create some projects for your CI/CD workflow to use. The content can be found on GitHub at https://github.com/siamaksade/openshift-cd-demo. Let's clone this to your bastion host and change to that directory. To do so, let's run the following commands:
@@ -901,7 +901,7 @@ This will create three projects in your OpenShift cluster.
 * Tasks - Stage: This will be your dev team's Stage deployment
 * CI/CD: This projects houses all of your CI/CD tools
 
-Next, you need to give the CI/CD project permission to exexute tasks in the Dev and Stage projects.
+Next, you need to give the CI/CD project permission to execute tasks in the Dev and Stage projects.
 
 ```
 oc policy add-role-to-group edit system:serviceaccounts:cicd -n dev
@@ -1103,7 +1103,7 @@ We can also take a look at the crash data from the _Events_ tab in the crash loo
 
 Now that we've found that the container is exiting with a status of 1, I can let you in on the secret: This container image's command is "exit 1". You can check out the dockerfile [here](/fail.Dockerfile).
 
-Now that we've gotten here, let's go ahead and delete this deployment config and move on to some other troubleshooting exercies. 
+Now that we've gotten here, let's go ahead and delete this deployment config and move on to some other troubleshooting exercises. 
 
 ```
 $ oc delete dc/fail
