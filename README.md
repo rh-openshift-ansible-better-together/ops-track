@@ -50,9 +50,10 @@
 
 ### 0: Preparation
 
-Each workshop participant is provisioned their own OpenShift Container Platform 3.11 cluster (using Ansible!). Each cluster contains one master node, one infrastructure node, one application node, and one bastion host. You will be working from the bastion host to complete today's lab. 
+Each workshop participant is provisioned their own OpenShift Container Platform 4 cluster. Each cluster contains three master node, one infrastructure node, one application node, and one bastion host. You will be working from the bastion host to complete today's lab. 
 
 You'll need to claim your OpenShift cluster using our [cluster assignment tool](https://red.ht/2JK4yYh). Once you get to the cluster assignment tool, you'll need two pieces of information:
+ ##TODO Update short url for next lab once provisioned
 
 * Lab Code: `Better Together (<INSERT CITY CODE HERE>) - Ops Track`
 * Activation Key: `ansible+openshift` 
@@ -88,7 +89,7 @@ $ export GUID=<INSERT_GUID_HERE>
 And finally, we need to login to the OpenShift cluster using the `oc` tools. To do so, run the following command:
 
 ```
-$ oc login https://master.<INSERT_GUID_HERE>.openshiftworkshop.com
+$ oc login https://console-openshift-console.apps.cluster-btws<GUID>.btws-<GUID>.openshiftworkshop.com
 ```
 
 When prompted, login with the username `opentlc-mgr` and the password that is provided in the cluster assignment tool.
@@ -98,6 +99,9 @@ You are now ready to start working through the workshop.
 ## 1: Getting to know Ansible
 
 To get to know Ansible, we're going to rely on a [quick slideshow](http://www.ansible.red), along with some live examples in your OpenShift cluster. You'll be running these commands from your cluster's bastion host, which is already configured with Ansible and an inventory that references your OpenShift cluster.
+
+ ### TODO: Find Ansible basics content for adhoc commands and roles. The goal of this is to do 15 - 30 mins of hands on ansible to show some of the basics of ansible like reusable code and being able to run a single command/role against many servers. I liked how the 3.x material covered some ansible basics (https://github.com/jduncan-rva/workshop-operator-lab-guide/blob/master/workshops/better-together/ansible-intro.rst). The key will be figuring out the hostnames in the cluster
+
 
 ## 2: OpenShift Architecture
 
@@ -137,7 +141,7 @@ It's not just storage where containers help save resources. We'll analyze this i
 
 In your cluster, log in as the admin user and navigate to the default project. Look at the resources your registry and other deployed applications consume. For example the `registry-console` application (a UI to see and manage the images in your OpenShift cluster) is consuming less than 2 MB of RAM!
 
-![OpenShift Application Console focused on the registry-console Deployment Config](/images/metrics.png)
+![OpenShift Application Console focused on the registry-console Deployment Config](/images/metrics.png) ##TODO Update pic
 
 If we were deploying this application in a VM we would spend multiple gigabytes of our RAM just so we could give the application the handful of megabytes it needs to run properly.
 
@@ -182,7 +186,7 @@ ssh infranode1.$GUID.internal
 Next, run the `sudo lsns` command. The output will be long, so let's use `grep` to filter it. 
 
 ```
-$ sudo lsns | grep heapster
+$ sudo lsns | grep heapster ## I propose to shift to kibana
 4026533532 mnt        1 43747 ec2-user   heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/tls.crt --tls_key=/heapster-certs/tls.key --tls_client_ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt --allowed_users=system:master-proxy --metric_resolution=30s --sink=hawkular:https://hawkular-metrics:443?tenant=_system&labelToTenant=pod_namespace&labelNodeId=nodename&caCert=/hawkular-metrics-certs/tls.crt&user=hawkular&pass=$HEAPSTER_PASSWORD&filter=label(container_name:^system.slice.*|^user.slice)&concurrencyLimit=5
 4026533536 uts        1 43747 ec2-user   heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/tls.crt --tls_key=/heapster-certs/tls.key --tls_client_ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt --allowed_users=system:master-proxy --metric_resolution=30s --sink=hawkular:https://hawkular-metrics:443?tenant=_system&labelToTenant=pod_namespace&labelNodeId=nodename&caCert=/hawkular-metrics-certs/tls.crt&user=hawkular&pass=$HEAPSTER_PASSWORD&filter=label(container_name:^system.slice.*|^user.slice)&concurrencyLimit=5
 4026533537 pid        1 43747 ec2-user   heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/tls.crt --tls_key=/heapster-certs/tls.key --tls_client_ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt --allowed_users=system:master-proxy --metric_resolution=30s --sink=hawkular:https://hawkular-metrics:443?tenant=_system&labelToTenant=pod_namespace&labelNodeId=nodename&caCert=/hawkular-metrics-certs/tls.crt&user=hawkular&pass=$HEAPSTER_PASSWORD&filter=label(container_name:^system.slice.*|^user.slice)&concurrencyLimit=5
@@ -701,35 +705,35 @@ Using a single command, you just scaled your application from 1 instance to 3 in
 
 The web interface for OpenShift makes additional assumptions when its used. The biggest difference you'll notice compared to the CLI is that routes are automatically created when applications are deployed. This can be altered, but it is the default behavior. To get started, browse to the OpenShift Console URL provided by the cluster assignment tool (it will be in the format of https://master.<INSERT_GUID_HERE>.openshiftworkshop.com/console), and login with the username `opentlc-mgr` and the password provided by the cluster assignment tool.
 
-![OpenShift Container Platform Login Page](/images/ocp_login.png)
+![OpenShift Container Platform Login Page](/images/ocp_login.png) ## TODO Update pic
 
 On the right side, select the Image Uploader Project. You may need to click the _View All_ link to have it show up for the first time.
 
-![OpenShift Container Platform Service Catalog](/images/ocp_project_list.png)
+![OpenShift Container Platform Service Catalog](/images/ocp_project_list.png) ## TODO Update pic
 
 After clicking on the project, you'll notice the `app-cli` project we just deployed. If you click on its area, it will expand to show additional application details. These details include the exposed route, build information, and even resource metrics.
 
-![Image Uploader Project Application Console focused on the app-cli Deployment Config](/images/app-cli_gui.png)
+![Image Uploader Project Application Console focused on the app-cli Deployment Config](/images/app-cli_gui.png) ## TODO Update pic
 
 To deploy an application from the web interface, click the _Add To Project_ button in the top right corner, followed by _Browse Catalog_.
 
-![Add to Project -> Browse Catalog Menu in OpenShift Container Platform](/images/ocp_add_to_project.png)
+![Add to Project -> Browse Catalog Menu in OpenShift Container Platform](/images/ocp_add_to_project.png) ## TODO Update pic
 
 This button brings up the Service Catalog. The 100+ templates available in today's lab are just what's available out of the box in OpenShift. You and your developers can also create custom templates and add them to a single project or make them available to your entire cluster. Other platforms can also be integrated into your OpenShift Catalog. Ansible, AWS, Azure, and other service brokers are available for integration with OpenShift today.
 
-![OpenShift Service Catalog view inside of the Application Console](/images/ocp_service_catalog.png)
+![OpenShift Service Catalog view inside of the Application Console](/images/ocp_service_catalog.png) ## TODO Update pic
 
 Using the _Search Catalog_ form, search for PHP, because the Image Uploader application is written using PHP. You'll get 3 search results back.
 
-![PHP Search Results in the OpenShift Service Catalog](/images/ocp_php_results.png)
+![PHP Search Results in the OpenShift Service Catalog](/images/ocp_php_results.png) ## TODO Update pic
 
 Image Uploader is a simple application that doesn't require a database. So we'll just select the PHP builder image, which is the same image we used when we deployed the same application from the command line. Selecting this option takes you to a simple wizard that helps deploy your application. Supply the same git repository you used for `app-cli` (https://github.com/OpenShiftInAction/image-uploader.git), give it the name `app-gui`, and click Create.
 
-![OpenShift PHP Web Console Build Wizard](/images/ocp_app-gui_wizard.png)
+![OpenShift PHP Web Console Build Wizard](/images/ocp_app-gui_wizard.png) ## TODO Update pic
 
 You'll get a confirmation that the build has started. Click the _Continue to project overview_ link to return to the Image Uploader project. You'll notice that the `app-gui` build is progressing quickly.
 
-![Image Uploader Project Application Console focused on the app-gui Deployment Config](/images/ocp_app-gui_build.png)
+![Image Uploader Project Application Console focused on the app-gui Deployment Config](/images/ocp_app-gui_build.png) ## TODO Update pic
 
 After the build completes, the deployment of the custom container image starts and quickly completes. A route is then created and automatically associated with `app-gui`. And just like that, you've deployed multiple instances of the same application with different URLs onto your OpenShift platform.
 
@@ -762,7 +766,7 @@ vxlan0
 
 Logically, the networking configuration on an OpenShift node looks like the graphic below.
 
-![OpenShift Networking Diagram](/images/ocp_networking_node.png)
+![OpenShift Networking Diagram](/images/ocp_networking_node.png) ## TODO Update pic
 
 When networking isn't working as you expect, and you've already ruled out DNS (for the 5th time), keep this architecture in mind as you are troubleshooting your cluster. There's no magic involved; only technologies that have proven themselves for years in production.
 
@@ -824,50 +828,30 @@ We were able to confirm that our HAProxy configuration updates automatically whe
 
 We know this is a mountain of content. Our goal is to present you with information that will be helpful as you sink your teeth into your own OpenShift clusters in your own infrastructure. These are some of the fundamental tools and tricks that are going to be helpful as you begin this journey.
 
-## 3: OpenShift and Ansible integration points
+## 3: OpenShift and Ansible integration points... Ansible Operators
 
-Deploying and managing an OpenShift cluster is controlled by Ansible. The [openshift-ansible](https://github.com/openshift/openshift-ansible) project is used to deploy and scale OpenShift clusters, as well as enable new features like [OpenShift Container Storage](https://www.openshift.com/products/container-storage/).
 
-### 3.1: Deploying OpenShift
+ ### Operators!!!
 
-Your entire OpenShift cluster was deployed using Ansible. The inventory used to deploy your cluster is on your bastion host at the default inventory location for Ansible, /etc/ansible/hosts. To deploy an OpenShift cluster on RHEL 7, after registering it and subscribing it to the proper repositories two Ansible playbooks need to be run:
+ Links:
 
-```
-ansible-playook /usr/share/ansible/openshift-ansible/playbooks/prerequisites.yml
-ansible-playook /usr/share/ansible/openshift-ansible/playbooks/deploy_cluster.yml
-```
+ [ansible operator deep dive](https://www.ansible.com/blog/kubernetes-operators-ansible-deep-dive-part-1)
 
-The deployment process takes 30-40 minutes to complete, depending on the size of your cluster. To save that time, we've got you covered and have already deployed your OpenShift cluster using Ansible.
+ [getting started guide](https://github.com/operator-framework/operator-sdk/blob/master/doc/ansible/user-guide.md)
 
-### 3.2: Modifying an OpenShift cluster
 
-In addition to deploying OpenShift, Ansible is used to modify your existing cluster. These playbooks are also located in `/usr/share/ansible/openshift-ansible/`. They can do things such as:
+ ## I'm working on developing a very basic Ansible operator that will manage namespaces and their resource quotas. I think this is a good use case since we already cover resource quotas and there are a number of other functionality we can challenge them to develop. ex) namespace clean up, smart quota increasing
 
-* Adding a node to your cluster
-* Deploying OpenShift Container Storage (OCS)
-* Other operations like re-deploying encryption certificates
-
-Taking a look at the playbook options available from openshift-ansible, you see:
-
-```
-$ ls /usr/share/ansible/openshift-ansible/playbooks/
-adhoc/		    deploy_cluster.yml	 openshift-cluster-autoscaler/	openshift-logging/		 openshift-nfs/			   ovirt/
-aws/		    gcp/		 openshift-console/		openshift-management/		 openshift-node/		   prerequisites.yml
-azure/		    init/		 openshift-descheduler/		openshift-master/		 openshift-node-problem-detector/  README.md
-byo/		    metrics-server/	 openshift-etcd/		openshift-metering/		 openshift-provisioners/	   redeploy-certificates.yml
-cluster-operator/   olm/		 openshift-glusterfs/		openshift-metrics/		 openshift-service-catalog/	   roles@
-common/		    openshift-autoheal/  openshift-hosted/		openshift-monitor-availability/  openshift-web-console/		   updates/
-container-runtime/  openshift-checks/	 openshift-loadbalancer/	openshift-monitoring/		 openstack/
-```
 
 ### 3.3: Summary
 
 In section 1, we talked about Ansible fundamentals. In section 2, we worked through the OpenShift architecture and how your cluster can be managed using Ansible.
 
-This section has been about the deeper relationship between OpenShift and Ansible. All major lifecycle events are handled using Ansible.
-Next, we'll take a look at an OpenShift deployment that provides everything you need to create and test a full CI/CD workflow in OpenShift.
+This section has been about the deeper relationship between OpenShift and Ansible. The power of Ansible can be leveraged to manage all kinds of OpenShift resources, and the power of Operators on OpenShift can be leveraged to maintain a controller that is very resilient.
 
 ## 4: A real world CI/CD scenario
+
+ ## I still like this workflow, but I think we can provide the participants with a CICD operator to create everything to demonstrate namespace scoped operators. Then we come back with the namespace config operator to manage the created namespaces to show what and admin would be worrying about... Some thing in the vein of this but as an ansibl operator (https://github.com/redhat-cop/namespace-configuration-operator/tree/master)
 
 In the final section of our workshop, we'll take everything we've been discussing and put it into practice with a large, complex, real-work workflow. In your cluster, you'll create multiple projects and use a Jenkins pipeline workflow that:
 
