@@ -50,12 +50,13 @@
 
 ### 0: Preparation
 
-Each workshop participant is provisioned their own OpenShift Container Platform 4 cluster. Each cluster contains three master node, one infrastructure node, one application node, and one bastion host. You will be working from the bastion host to complete today's lab. 
+Each workshop participant is provisioned their own OpenShift Container Platform 4 cluster. Each cluster contains three master nodes, one  worker node, and one bastion host. You will be working from the bastion host to complete today's lab. 
 
 You'll need to claim your OpenShift cluster using our [cluster assignment tool](https://red.ht/2JK4yYh). Once you get to the cluster assignment tool, you'll need two pieces of information:
- ##TODO Update short url for next lab once provisioned
 
-* Lab Code: `Better Together (<INSERT CITY CODE HERE>) - Ops Track`
+[//]: #TODO Update short url for next lab once provisioned
+
+* Lab Code: `Better Together (<INSERT CITY CODE HERE>) - Ops Track` [//]: Remember to replace city
 * Activation Key: `ansible+openshift` 
 
 Once you enter the information into the cluster assignment tool, you'll receive a few pieces of information. It is important to keep this window open during the workshop. The first (and one of the most important) pieces of information you will receive is a "GUID" in the format `btws-<4_RANDOM_CHARACTERS>` (for example, `btws-j1e2`). It is important to keep this GUID handy for the rest of the lab. 
@@ -100,7 +101,32 @@ You are now ready to start working through the workshop.
 
 To get to know Ansible, we're going to rely on a [quick slideshow](http://www.ansible.red), along with some live examples in your OpenShift cluster. You'll be running these commands from your cluster's bastion host, which is already configured with Ansible and an inventory that references your OpenShift cluster.
 
- ### TODO: Find Ansible basics content for adhoc commands and roles. The goal of this is to do 15 - 30 mins of hands on ansible to show some of the basics of ansible like reusable code and being able to run a single command/role against many servers. I liked how the 3.x material covered some ansible basics (https://github.com/jduncan-rva/workshop-operator-lab-guide/blob/master/workshops/better-together/ansible-intro.rst). The key will be figuring out the hostnames in the cluster
+### Terms
+
+Ansible
+  Ansible is a language, written in `YAML <https://yaml.org/>`__, used to define the end state of (up to) your entire IT environment. It's the only language that can easily, natively handle 1) Linux 2) Windows 3) Networking 4) Security & Compliance 5) Application lifecycle automation in your infrastructure.
+
+  - Linux systems connect using SSH and use Python.
+  - Windows systems connect using WinRM and use PowerShell.
+  - Networking systems connect using custom firmware interpreters over SSH
+
+Ansible Engine
+  Ansible engine is the tool that executes the Ansible language. It's written in Python, and is available for most Linux distributions.
+
+Ansible Tower
+  When you get to the point that you're managing large portions of your infrastructure, Ansible Tower is how you provide a single source of truth for your Ansible workflows. It integrates with cloud providers, virtualization platforms, CMDB and trouble ticketing systems, and pretty much anything with an API. Out of the box, it provides RBAC, mult-tenancy, a full RESTful API, and workflow tooling to make your infrastructure more manageable.
+
+module
+  An Ansible module is the basic unit of work. A module performs a single task. That task can be small, like creating a directory on a Linux server, or large, like creating an Azure guest instance. Multiple modules are run in order in a playbook.
+
+playbook
+  A playbook is a collection of tasks that use modules, an inventory group to run the tasks against, as well as all of the variables and templates needed to finish their work. Playbooks are how most Ansible is executed.
+
+.. figure:: images/ops/ansible_overview.png
+   :alt: How Ansible works at a high level
+
+   High level Ansible architecture
+[//]: ## TODO: Find Ansible basics content for adhoc commands and roles. The goal of this is to do 15 - 30 mins of hands on ansible to show some of the basics of ansible like reusable code and being able to run a single command/role against many servers. I liked how the 3.x material covered some ansible basics (https://github.com/jduncan-rva/workshop-operator-lab-guide/blob/master/workshops/better-together/ansible-intro.rst). The key will be figuring out the hostnames in the cluster
 
 
 ## 2: OpenShift Architecture
@@ -177,32 +203,80 @@ Let's investigate what makes a container a container.
 
 The kernel component that makes the applications feel isolated are called namespaces. Namespaces are a lot like a two-way mirror or a paper wall inside Linux. Like a two-way mirror, from the host we can see inside the container. But from inside the container it can only see what's inside its namespace. And like a paper wall, namespaces provide sufficient isolation but they're lightweight to stand up and tear down.
 
-SSH to your infrastructure node by running the following command:
+The workshop was deployed on CoreOS nodes, so the ability to SSH has been disabled as part of best practices. This is to promote the principle of cattle over pets. When working accross large numbers of servers, SSHing can lead to inconsistencies from trying "quick fixes". This configuratoin drift leads to upredictable behavior which we always want to avoid. For the purpose of this workshop, we will take advantage of a pod that runs with priviliged permissions in order to take a look at what is going on undertneath the hood of OpenShift.
+
+SSH to your bastion node by running the following command:
 
 ```
-ssh infranode1.$GUID.internal
+ssh generic_na_gnekic-redhat.com@bastion.btws-<GUID>.open.redhat.com
 ```
+
+Next, switch your context to the openshift-sdn project.
+
+```
+oc project openshift-sdn
+```
+
+Now lets see the nodes in our cluster.
+
+```
+$ oc get nodes                                                             
+NAME                           STATUS   ROLES    AGE    VERSION
+**ip-10-0-132-191.ec2.internal   Ready    worker   139m   v1.13.4+3bd346709**
+ip-10-0-141-89.ec2.internal    Ready    master   144m   v1.13.4+3bd346709
+ip-10-0-159-107.ec2.internal   Ready    master   145m   v1.13.4+3bd346709
+ip-10-0-173-119.ec2.internal   Ready    master   145m   v1.13.4+3bd346709
+```
+
+Note that there are three masters and one worker node. We are interested at looking at investigating the workloads on the worker nodes. Take now of the worker nodes name.
+
+To see which sdn pod is running on the worker node, run:
+
+```
+$ oc get pods -o wide                                                    
+NAME                   READY   STATUS    RESTARTS   AGE    IP             NODE                           NOMINATED NODE   READINESS GATES
+ovs-2w8xn              1/1     Running   0          147m   10.0.173.119   ip-10-0-173-119.ec2.internal   <none>           <none>
+ovs-7pftz              1/1     Running   0          147m   10.0.159.107   ip-10-0-159-107.ec2.internal   <none>           <none>
+ovs-f6nv6              1/1     Running   0          142m   10.0.132.191   ip-10-0-132-191.ec2.internal   <none>           <none>
+ovs-xlx7h              1/1     Running   0          147m   10.0.141.89    ip-10-0-141-89.ec2.internal    <none>           <none>
+sdn-7x5pn              1/1     Running   2          147m   10.0.159.107   ip-10-0-159-107.ec2.internal   <none>           <none>
+**sdn-8r2r9              1/1     Running   0          142m   10.0.132.191   ip-10-0-132-191.ec2.internal   <none>           <none>**
+sdn-controller-4dj9k   1/1     Running   0          147m   10.0.173.119   ip-10-0-173-119.ec2.internal   <none>           <none>
+sdn-controller-cwj97   1/1     Running   0          147m   10.0.159.107   ip-10-0-159-107.ec2.internal   <none>           <none>
+sdn-controller-p6nl8   1/1     Running   0          147m   10.0.141.89    ip-10-0-141-89.ec2.internal    <none>           <none>
+sdn-d72vg              1/1     Running   1          147m   10.0.173.119   ip-10-0-173-119.ec2.internal   <none>           <none>
+sdn-j5wgj              1/1     Running   0          147m   10.0.141.89    ip-10-0-141-89.ec2.internal    <none>           <none>
+```
+
+Identify the pod running on the worker node and run the following command in order to open up a remote shell into the pod.
+
+```
+$ oc rsh sdn-8r2r9
+sh-4.2#
+```
+
+Since the sdn pod requires to be privileged in order to configure the network on the node, the pod is effectively running as root as well. We will take advantage of this in order to see how OpenShift seperates resources between pods.
 
 Next, run the `sudo lsns` command. The output will be long, so let's use `grep` to filter it. 
 
 ```
-$ sudo lsns | grep heapster ## I propose to shift to kibana
-4026533532 mnt        1 43747 ec2-user   heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/tls.crt --tls_key=/heapster-certs/tls.key --tls_client_ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt --allowed_users=system:master-proxy --metric_resolution=30s --sink=hawkular:https://hawkular-metrics:443?tenant=_system&labelToTenant=pod_namespace&labelNodeId=nodename&caCert=/hawkular-metrics-certs/tls.crt&user=hawkular&pass=$HEAPSTER_PASSWORD&filter=label(container_name:^system.slice.*|^user.slice)&concurrencyLimit=5
-4026533536 uts        1 43747 ec2-user   heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/tls.crt --tls_key=/heapster-certs/tls.key --tls_client_ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt --allowed_users=system:master-proxy --metric_resolution=30s --sink=hawkular:https://hawkular-metrics:443?tenant=_system&labelToTenant=pod_namespace&labelNodeId=nodename&caCert=/hawkular-metrics-certs/tls.crt&user=hawkular&pass=$HEAPSTER_PASSWORD&filter=label(container_name:^system.slice.*|^user.slice)&concurrencyLimit=5
-4026533537 pid        1 43747 ec2-user   heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/tls.crt --tls_key=/heapster-certs/tls.key --tls_client_ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt --allowed_users=system:master-proxy --metric_resolution=30s --sink=hawkular:https://hawkular-metrics:443?tenant=_system&labelToTenant=pod_namespace&labelNodeId=nodename&caCert=/hawkular-metrics-certs/tls.crt&user=hawkular&pass=$HEAPSTER_PASSWORD&filter=label(container_name:^system.slice.*|^user.slice)&concurrencyLimit=5
+sh-4.2# lsns|grep appregistry-server
+4026533523 mnt        1  4203 1000210000 appregistry-server -r https://quay.io/cnr|redhat-operators -o businessautomation-operator,elasticsearch-operator,amq7-cert-manager,kubevirt-hyperconverged,fuse-online,fuse-apicurito,serverless-operator,codeready-workspaces,cluster-logging,servicemeshoperator,kiali-ossm,openshiftansibleservicebroker,amq-online,datagrid,3scale-operator,fuse-camel-k,amq-streams,openshifttemplateservicebroker,jaeger-product,amq7-interconnect-operator 
+4026533524 pid        1  4203 1000210000 appregistry-server -r https://quay.io/cnr|redhat-operators -o businessautomation-operator,elasticsearch-operator,amq7-cert-manager,kubevirt-hyperconverged,fuse-online,fuse-apicurito,serverless-operator,codeready-workspaces,cluster-logging,servicemeshoperator,kiali-ossm,openshiftansibleservicebroker,amq-online,datagrid,3scale-operator,fuse-camel-k,amq-streams,openshifttemplateservicebroker,jaeger-product,amq7-interconnect-operator 
+...
 ```
 
 To limit this content to a single process, specify one of the PIDs on your system by using the `-p` parameter for `lsns`.
 
 ```
-$ sudo lsns -p43747
-        NS TYPE  NPROCS   PID USER     COMMAND
-4026531837 user     354     1 root     /usr/lib/systemd/systemd --switched-root --system --deserialize 21
-4026533532 mnt        1 43747 ec2-user heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/
-4026533536 uts        1 43747 ec2-user heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/
-4026533537 pid        1 43747 ec2-user heapster --source=kubernetes.summary_api:${MASTER_URL}?useServiceAccount=true&kubeletHttps=true&kubeletPort=10250 --tls_cert=/heapster-certs/
-4026534019 ipc        2 43618 1001     /usr/bin/pod
-4026534022 net        2 43618 1001     /usr/bin/pod
+sh-4.2# lsns -p4203                 
+        NS TYPE  NPROCS   PID USER       COMMAND
+4026531837 user     385     1 root       /usr/lib/systemd/systemd --switched-root --system --deserialize 16
+4026533040 uts        2  2926 root       /usr/bin/pod
+4026533041 ipc        2  2926 root       /usr/bin/pod
+4026533044 net        2  2926 root       /usr/bin/pod
+4026533523 mnt        1  4203 1000210000 appregistry-server -r https://quay.io/cnr|redhat-operators -o businessautomati
+4026533524 pid        1  4203 1000210000 appregistry-server -r https://quay.io/cnr|redhat-operators -o businessautomati
 ```
 
 Let's discuss 5 of these namespaces.
@@ -213,87 +287,102 @@ The mount namespace is used to isolate filesystem resources inside containers. T
 
 If your container has host resources or persistent storage assigned to it, these are made available using a Linux bind mount. This means, not matter what you use for your persistent storage backed, your developer's applications only ever need to know how to access the correct directory.
 
-We can see this using the `nsenter` command line utility on your infrastructure node. `Nsenter` is used to enter a single namespace that is associated with another PID. When debugging container environments, its value is massive. Here is the root filesystem listing from an infrastructure node.
+We can see this using the `nsenter` command line utility while running as root. `Nsenter` is used to enter a single namespace that is associated with another PID. When debugging container environments, its value is massive. Here is the root filesystem listing from the sdn pod.
 
 ```
-$ sudo ls -al /
-total 24
-dr-xr-xr-x.  18 root root  236 Mar 23  2018 .
-dr-xr-xr-x.  18 root root  236 Mar 23  2018 ..
-lrwxrwxrwx.   1 root root    7 Mar 23  2018 bin -> usr/bin
-dr-xr-xr-x.   5 root root 4096 Jul 15 18:35 boot
-drwxr-xr-x.   2 root root    6 Mar 23  2018 data
-drwxr-xr-x.  18 root root 2780 Jul 15 18:38 dev
-drwxr-xr-x.  99 root root 8192 Jul 15 18:53 etc
-drwxr-xr-x.   3 root root   22 Jul 15 18:26 home
-lrwxrwxrwx.   1 root root    7 Mar 23  2018 lib -> usr/lib
-lrwxrwxrwx.   1 root root    9 Mar 23  2018 lib64 -> usr/lib64
+sh-4.2# ls -al /                                                                                                      
+total 0
+drwxr-xr-x.   1 root root  110 Sep 14 17:34 .
+drwxr-xr-x.   1 root root  110 Sep 14 17:34 ..
+drwxr-xr-x.   2 root root    6 Sep 14 17:34 80-openshift-network.conf
+lrwxrwxrwx.   1 root root    7 Aug  1 09:16 bin -> usr/bin
+dr-xr-xr-x.   2 root root    6 Dec 14  2017 boot
+drwxrwxrwx.   3 root root   82 Sep 14 17:34 config
+drwxr-xr-x.  14 root root 2760 Sep 14 17:34 dev
+drwxr-xr-x.   1 root root   35 Sep 14 17:34 etc
+drwxr-xr-x.   2 root root    6 Aug  1 09:18 home
+drwxr-xr-x.  12 root root  253 Sep 14 17:33 host
+lrwxrwxrwx.   1 root root    7 Aug  1 09:16 lib -> usr/lib
+lrwxrwxrwx.   1 root root    9 Aug  1 09:16 lib64 -> usr/lib64
 drwxr-xr-x.   2 root root    6 Dec 14  2017 media
 drwxr-xr-x.   2 root root    6 Dec 14  2017 mnt
-drwxr-xr-x.   3 root root   17 Jul 15 18:53 opt
-dr-xr-xr-x. 366 root root    0 Jul 15 18:34 proc
-dr-xr-x---.   6 root root  234 Jul 16 16:02 root
-drwxr-xr-x.  38 root root 1140 Jul 15 18:53 run
-lrwxrwxrwx.   1 root root    8 Mar 23  2018 sbin -> usr/sbin
+drwxr-xr-x.   1 root root   17 Aug 29 22:55 opt
+dr-xr-xr-x. 402 root root    0 Sep 14 17:33 proc
+dr-xr-x---.   1 root root   27 Sep 14 20:20 root
+drwxr-xr-x.  36 root root  920 Sep 14 17:34 run
+lrwxrwxrwx.   1 root root    8 Aug  1 09:16 sbin -> usr/sbin
 drwxr-xr-x.   2 root root    6 Dec 14  2017 srv
-dr-xr-xr-x.  13 root root    0 Jul 15 18:34 sys
-drwxrwxrwt.  10 root root 4096 Jul 16 15:50 tmp
-drwxr-xr-x.  13 root root  155 Mar 23  2018 usr
-drwxr-xr-x.  20 root root  282 Jul 15 18:35 var
+dr-xr-xr-x.  13 root root    0 Sep 14 17:33 sys
+drwxrwxrwt.   1 root root    6 Aug 29 22:58 tmp
+drwxr-xr-x.   1 root root   81 Aug  1 09:16 usr
+drwxr-xr-x.   1 root root   28 Aug  1 09:16 var
+
 ```
 
 Let's use `nsenter` to enter the mount namespace for the heapster container using the PID we got from the `lsns` command above. Once you enter that namespace, you can look at the root filesystem to see that it is different than what we saw before.
 
 ```
-$ sudo nsenter -m -t 43747
-[root@infranode1 /]# ll
+sh-4.2# nsenter -m -t 4203                                
+-sh-4.2# 
+-sh-4.2# ls -al /
 total 0
-lrwxrwxrwx.   1 root root   7 Apr 16 15:25 bin -> usr/bin
+drwxr-xr-x.   1 root root  34 Sep 14 17:35 .
+drwxr-xr-x.   1 root root  34 Sep 14 17:35 ..
+lrwxrwxrwx.   1 root root   7 Aug  1 09:16 bin -> usr/bin
 dr-xr-xr-x.   2 root root   6 Dec 14  2017 boot
-drwxr-xr-x.   5 root root 360 Jul 15 18:58 dev
-drwxr-xr-x.   1 root root  66 Jul 15 18:58 etc
-drwxrwxrwt.   3 root root 140 Jul 15 18:58 hawkular-account
-drwxrwxrwt.   3 root root 160 Jul 15 18:58 hawkular-metrics-certs
-drwxrwxrwt.   3 root root 120 Jul 15 18:58 heapster-certs
-drwxr-xr-x.   1 root root  22 May 24 22:08 home
-lrwxrwxrwx.   1 root root   7 Apr 16 15:25 lib -> usr/lib
-lrwxrwxrwx.   1 root root   9 Apr 16 15:25 lib64 -> usr/lib64
+drwxr-xr-x.   5 root root 360 Sep 14 17:35 dev
+drwxr-xr-x.   1 root root  25 Aug 29 21:57 etc
+drwxr-xr-x.   2 root root   6 Aug  1 09:18 home
+lrwxrwxrwx.   1 root root   7 Aug  1 09:16 lib -> usr/lib
+lrwxrwxrwx.   1 root root   9 Aug  1 09:16 lib64 -> usr/lib64
 drwxr-xr-x.   2 root root   6 Dec 14  2017 media
 drwxr-xr-x.   2 root root   6 Dec 14  2017 mnt
-drwxr-xr-x.   1 root root  62 May 24 22:08 opt
-dr-xr-xr-x. 367 root root   0 Jul 15 18:58 proc
-dr-xr-x---.   1 root root  27 Jul 16 16:01 root
-drwxr-xr-x.   1 root root  18 May 24 22:08 run
-lrwxrwxrwx.   1 root root   8 Apr 16 15:25 sbin -> usr/sbin
-drwxrwxrwt.   3 root root 100 Jul 15 18:58 secrets
+drwxr-xr-x.   2 root root   6 Dec 14  2017 opt
+dr-xr-xr-x. 403 root root   0 Sep 14 17:35 proc
+drwxrwxr-x.   1 root root  42 Sep 14 17:35 registry
+dr-xr-x---.   1 root root  27 Sep 14 20:22 root
+drwxr-xr-x.   1 root root  18 Aug 29 21:11 run
+lrwxrwxrwx.   1 root root   8 Aug  1 09:16 sbin -> usr/sbin
 drwxr-xr-x.   2 root root   6 Dec 14  2017 srv
-dr-xr-xr-x.  13 root root   0 Jul 15 18:34 sys
-drwxrwxrwt.   1 root root   6 May 24 22:08 tmp
-drwxr-xr-x.   1 root root  28 Apr 16 15:25 usr
-drwxr-xr-x.   1 root root  52 Apr 16 15:25 var
+dr-xr-xr-x.  13 root root   0 Sep 14 17:33 sys
+drwxrwxrwt.   1 root root   6 Aug 29 21:57 tmp
+drwxr-xr-x.   1 root root  17 Aug  1 09:16 usr
+drwxr-xr-x.   1 root root  52 Aug  1 09:16 var
 ```
 
-The container image for heapster includes some of the filesystem like a normal server, but it also includes directories that are specific to the application.
+The container image for quay includes some of the filesystem like a normal server, but it also includes directories that are specific to the application.
 
 ##### 2.2.3.2: The uts namespace
 UTS stands for "Unix Time Sharing". This is a concept that has been around since the 1970's when it was a novel idea to allow multiple users to log in to a system simultaneously. If you run the command `uname -a`, the information returned is the UTS data structure from the kernel.
+
 
 ```
 $ uname -a
 Linux infranode1.btws-6e50.internal 3.10.0-957.21.3.el7.x86_64 #1 SMP Fri Jun 14 02:54:29 EDT 2019 x86_64 x86_64 x86_64 GNU/Linux
 ``` 
+[//]: # Not sure if I want to keep this part since we are not running on the actual hosts
 
 Each container in OpenShift gets its own UTS namespace, which is equivalent to its own `uname -a` output. That means each container gets its own hostname and domain name. This is extremely useful in a large distributed application platform like OpenShift.
 
-We can see this in action using `nsenter`.
+We can see this in action by switching over the quay pod we looked at earlier. 
 
 ```
-$ hostname
-infranode1.btws-6e50.internal
-$ sudo nsenter -u -t 43747
-[root@heapster-kclzv ec2-user]# hostname
-heapster-kclzv
+$ oc project openshift-image-registry 
+Now using project "openshift-image-registry" on server "https://api.cluster-btws-3725.btws-3725.open.redhat.com:6443".
+$ oc get pods
+NAME                                               READY   STATUS    RESTARTS   AGE
+cluster-image-registry-operator-68586f74b7-zsqkn   1/1     Running   0          3h
+image-registry-f7cb77cd8-j5ppj                     1/1     Running   0          179m
+node-ca-dclkc                                      1/1     Running   0          179m
+node-ca-qt7dt                                      1/1     Running   0          179m
+node-ca-tnjxm                                      1/1     Running   0          179m
+node-ca-wxzqr                                      1/1     Running   0          178m
+$ oc rsh image-registry-f7cb77cd8-j5ppj
+sh-4.2$ hostname
+image-registry-f7cb77cd8-j5ppj
 ```
+
+You can try this other pods and see that each one has it's own UTS namespace.
 
 ##### 2.2.3.3: The ipc namespace
 
@@ -350,34 +439,37 @@ PIDs are how we communicate with processes inside Linux. Each container having i
 OpenShift relies on software-defined networking that we'll discuss more in an upcoming section. Because of this, as well as modern networking architectures, the networking configuration on an OpenShift node can become extremely complex. One of the over-arching goals of OpenShift is to make the developer's experience consistent no matter the underlying host's complexity. The network namespace helps with this. On your infrastructure node, there could be upwards of 20 defined interfaces.
 
 ```
-$ ip a
-1: lo:  mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+$ oc rsh sdn-8r2r9
+sh-4.2# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
     inet 127.0.0.1/8 scope host lo
        valid_lft forever preferred_lft forever
     inet6 ::1/128 scope host
        valid_lft forever preferred_lft forever
-2: eth0:  mtu 9001 qdisc mq state UP group default qlen 1000
-    link/ether 0e:39:78:cc:a6:58 brd ff:ff:ff:ff:ff:ff
-    inet 172.16.87.199/16 brd 172.16.255.255 scope global noprefixroute dynamic eth0
-       valid_lft 3178sec preferred_lft 3178sec
-    inet6 fe80::c39:78ff:fecc:a658/64 scope link
+2: ens3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9001 qdisc mq state UP group default qlen 1000
+    link/ether 02:9c:77:0b:83:34 brd ff:ff:ff:ff:ff:ff
+    inet 10.0.132.191/20 brd 10.0.143.255 scope global noprefixroute dynamic ens3
+       valid_lft 3211sec preferred_lft 3211sec
+    inet6 fe80::3824:1796:b6f:7a40/64 scope link noprefixroute
        valid_lft forever preferred_lft forever
-3: docker0:  mtu 1500 qdisc noqueue state DOWN group default
-    link/ether 02:42:36:9f:24:e7 brd ff:ff:ff:ff:ff:ff
-    inet 172.17.0.1/16 scope global docker0
+3: ovs-system: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 92:6a:3c:02:f5:bd brd ff:ff:ff:ff:ff:ff
+4: br0: <BROADCAST,MULTICAST> mtu 8951 qdisc noop state DOWN group default qlen 1000
+    link/ether 6a:39:f9:33:50:45 brd ff:ff:ff:ff:ff:ff
+5: vxlan_sys_4789: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 65000 qdisc noqueue master ovs-system state UNKNOWN group defa
+ult qlen 1000
+    link/ether 8a:97:cd:9a:cd:70 brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::8897:cdff:fe9a:cd70/64 scope link
        valid_lft forever preferred_lft forever
-4: ovs-system:  mtu 1500 qdisc noop state DOWN group default qlen 1000
-    link/ether f6:95:72:0e:09:4f brd ff:ff:ff:ff:ff:ff
-5: br0:  mtu 8951 qdisc noop state DOWN group default qlen 1000
-    link/ether be:47:c6:da:e5:48 brd ff:ff:ff:ff:ff:ff
-6: vxlan_sys_4789:  mtu 65000 qdisc noqueue master ovs-system state UNKNOWN group default qlen 1000
-    link/ether 7a:0b:31:e4:a4:eb brd ff:ff:ff:ff:ff:ff
-    inet6 fe80::780b:31ff:fee4:a4eb/64 scope link
-       valid_lft forever preferred_lft forever
+6: tun0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 8951 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/ether 42:d9:14:d7:56:39 brd ff:ff:ff:ff:ff:ff
+    inet 10.131.0.1/23 brd 10.131.1.255 scope global tun0
+
+...
 ```
                   
-However, from within one of the containers on that node, you only see an `eth0` and `lo` interface.
+However, from within an unpriviliged pod, you only see an `eth0` and `lo` interface.
 
 ```
 $ sudo nsenter -n -t 43747 ip a
@@ -416,14 +508,17 @@ In OpenShift, control groups are used to deploy resource limit and requests. Let
 Applications deployed in OpenShift are separated into projects. Projects are used not only as logical separators, but also as a reference for RBAC and networking policies that we'll discuss later. To create a new project, use the oc new-project command.
 
 ```
-$ oc new-project image-uploader --display-name="Image Uploader Project"
-Now using project "image-uploader" on server "https://master.btws-6e50.openshiftworkshop.com:443".
+$ oc new-project image-uploader --display-name="Image Uploader Project"  
+Now using project "image-uploader" on server "https://api.cluster-btws-3725.btws-3725.open.redhat.com:6443".
 
 You can add applications to this project with the 'new-app' command. For example, try:
 
     oc new-app django-psql-example
 
-to build a new example application in Python.
+to build a new example application in Python. Or use kubectl to deploy a simple Kubernetes application:
+
+    kubectl create deployment hello-node --image=gcr.io/hello-minikube-zero-install/hello-node
+
 ```
 
 We'll use this project for multiple examples. Before we actually deploy an application into it, we want to set up project limits and requests.
@@ -434,55 +529,7 @@ OpenShift Limits are per-project maximums for various objects like number of con
 
 ##### 2.2.4.3: Creating limits and requests for a project
 
-The first thing we'll create for the Image Uploader project is a collection of Limits. This is done, like most things in OpenShift, by creating a YAML file and having OpenShift process it. On your bastion host, create a file named `/root/core-resource-limits.yaml`. It should contain the following content.
-
-```
-apiVersion: "v1"
-kind: "LimitRange"
-metadata:
-  name: "core-resource-limits"
-spec:
-  limits:
-    - type: "Pod"
-      max:
-        cpu: "2"
-        memory: "1Gi"
-      min:
-        cpu: "100m"
-        memory: "4Mi"
-    - type: "Container"
-      max:
-        cpu: "2"
-        memory: "1Gi"
-      min:
-        cpu: "100m"
-        memory: "4Mi"
-      default:
-        cpu: "300m"
-        memory: "200Mi"
-      defaultRequest:
-        cpu: "200m"
-        memory: "100Mi"
-      maxLimitRequestRatio:
-        cpu: "10"
-```        
-                  
-After your file is created, have it processed and added to the configuration for the `image-uploader` project.
-
-```
-$ oc create -f core-resource-limits.yaml -n image-uploader
-limitrange "core-resource-limits" created
-```
-
-To confirm your limits have been applied, run the `oc get limitrange` command.
-
-```
-$ oc get limitrange
-NAME                   AGE
-core-resource-limits   2m
-```
-
-The limitrange you just created applies to any applications deployed in the `image-uploader` project. Next, you're going to create resource limits for the entire project. Create a file named `/root/compute-resources.yaml` on your bastion host. It should contain the following content.
+First you're going to create resource limits for the entire project. Create a file named `/root/compute-resources.yaml` on your bastion host. It should contain the following content.
 
 ```
 apiVersion: v1
