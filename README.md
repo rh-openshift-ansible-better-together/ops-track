@@ -644,14 +644,26 @@ $ oc project image-uploader
 Inside the `image-uploader` project you'll use the `oc new-app` command to deploy your new application using S2I.
 
 ```
-$ oc new-app --image-stream=php --code=https://github.com/OpenShiftInAction/image-uploader.git --name=app-cli
---> Found image eb1fe84 (2 weeks old) in image stream "openshift/php" under tag "7.1" for "php"
+$ oc new-project image-uploader
+Now using project "image-uploader" on server "https://api.cluster-btws-6505.btws-6505.open.redhat.com:6443".
 
-    Apache 2.4 with PHP 7.1
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app django-psql-example
+
+to build a new example application in Python. Or use kubectl to deploy a simple Kubernetes application:
+
+    kubectl create deployment hello-node --image=gcr.io/hello-minikube-zero-install/hello-node
+
+<c new-app --image-stream=php --code=httpsploader.git --name=app-cliction/image-u                              n       
+
+--> Found image fff791a (2 weeks old) in image stream "openshift/php" under tag "7.2" for "php"
+
+    Apache 2.4 with PHP 7.2
     -----------------------
-    PHP 7.1 available as container is a base platform for building and running various PHP 7.1 applications and frameworks. PHP is an HTML-embedded scripting language. PHP attempts to make it easy for developers to write dynamically generated web pages. PHP also offers built-in database integration for several commercial and non-commercial database management systems, so writing a database-enabled webpage with PHP is fairly simple. The most common use of PHP coding is probably as a replacement for CGI scripts.
+    PHP 7.2 available as container is a base platform for building and running various PHP 7.2 applications and frameworks. PHP is an HTML-embedded scripting language. PHP attempts to make it easy for developers to write dynamically generated web pages. PHP also offers built-in database integration for several commercial and non-commercial database management systems, so writing a database-enabled webpage with PHP is fairly simple. The most common use of PHP coding is probably as a replacement for CGI scripts.
 
-    Tags: builder, php, php71, rh-php71
+    Tags: builder, php, php72, rh-php72
 
     * The source repository appears to match: php
     * A source build using source code from https://github.com/OpenShiftInAction/image-uploader.git will be created
@@ -671,15 +683,16 @@ $ oc new-app --image-stream=php --code=https://github.com/OpenShiftInAction/imag
     Application is not exposed. You can expose services to the outside world by executing one or more of the commands below:
      'oc expose svc/app-cli'
     Run 'oc status' to view your app.
+
 ```
 
 The build process should only take a couple of minutes. Once the output of `oc get pods` shows your `app-cli` pod in a Ready and Running state, you're (almost) good to go.
 
 ```
-$ oc get pods
-NAME              READY   STATUS      RESTARTS   AGE
-app-cli-1-build   0/1     Completed   0          1m
-app-cli-1-rkxt4   1/1     Running     0          7s
+NAME               READY   STATUS      RESTARTS   AGE
+app-cli-1-build    0/1     Completed   0          2m15s
+app-cli-1-deploy   0/1     Completed   0          56s
+app-cli-1-rwvx2    1/1     Running     0          47s
 ```
 
 We talked briefly about services and pods and all of the constructs inside OpenShift during the presentation part of this lab. You can see in the output above that you created a service as part of your new application, along with other needed objects. Let's take a look at the `app-cli` service using the command line.
@@ -707,7 +720,7 @@ Before we can get to our new application, we have to expose the service external
 
 ```
 $ oc expose svc/app-cli
-route "app-cli" exposed
+route.route.openshift.io/app-cli exposed
 ```
 
 You may notice that we used `svc` instead of `service` in the above command. Because typing is hard, most objects in OpenShift have an abbreviated syntax you can use on the CLI. Services can also be described as `svc`, DeploymentConfigs are `dc`, Replication Controllers are `rc`, and Pods are `po`. Routes don't have an abbreviation. A full list is available in the [OpenShift documentation](https://docs.openshift.com/container-platform/3.11/cli_reference/basic_cli_operations.html#object-types).
@@ -732,10 +745,10 @@ Scaling your `app-cli` application is accomplished with a single `oc scale` comm
 
 ```
 $ oc scale dc/app-cli --replicas=3
-deploymentconfig.apps.openshift.io "app-cli" scaled
+deploymentconfig.apps.openshift.io/app-cli scaled
 ```
 
-Because your second application node doesn't have the custom container image for `app-cli` already cached, it may take a few seconds for the initial pod to be created on that node. To confirm everything is running, use the `oc get pods` command. The additional `-o wide` provides additional output, including the internal IP address of the pod and the node where it's deployed.
+To confirm everything is running, use the `oc get pods` command. The additional `-o wide` provides additional output, including the internal IP address of the pod and the node where it's deployed.
 
 ```
 $ oc get pods -o wide
@@ -746,41 +759,41 @@ app-cli-1-cdjd8   1/1     Running     0          14s   10.1.2.10   node1.btws-6e
 app-cli-1-rkxt4   1/1     Running     0          2m    10.1.2.8    node1.btws-6e50.internal   <none>
 ```
                   
-Using a single command, you just scaled your application from 1 instance to 3 instances on 2 servers in a matter of seconds. Compare that to what your application scaling process is using VMs or bare metal systems; or even things like Amazon ECS or just Docker. It's pretty amazing. Next, let's do the same thing using the web interface.
+Using a single command, you just scaled your application from 1 instance to 3 instances in a matter of seconds. Compare that to what your application scaling process is using VMs or bare metal systems; or even things like Amazon ECS or just Docker. It's pretty amazing. Next, let's do the same thing using the web interface.
 
 #### 2.3.5: Using the web interface
 
 The web interface for OpenShift makes additional assumptions when its used. The biggest difference you'll notice compared to the CLI is that routes are automatically created when applications are deployed. This can be altered, but it is the default behavior. To get started, browse to the OpenShift Console URL provided by the cluster assignment tool (it will be in the format of https://master.<INSERT_GUID_HERE>.openshiftworkshop.com/console), and login with the username `opentlc-mgr` and the password provided by the cluster assignment tool.
 
-![OpenShift Container Platform Login Page](/images/ocp_login.png) ## TODO Update pic
+![OpenShift Container Platform Login Page](/images/ocp_login.png)
 
-On the right side, select the Image Uploader Project. You may need to click the _View All_ link to have it show up for the first time.
+The default display shows all of the projects that are available to you. Select image-uploader to see what we have deployed so far.
 
-![OpenShift Container Platform Service Catalog](/images/ocp_project_list.png) ## TODO Update pic
+![OpenShift Container Platform Service Catalog](/images/ocp_project_list.png) 
 
 After clicking on the project, you'll notice the `app-cli` project we just deployed. If you click on its area, it will expand to show additional application details. These details include the exposed route, build information, and even resource metrics.
 
-![Image Uploader Project Application Console focused on the app-cli Deployment Config](/images/app-cli_gui.png) ## TODO Update pic
+![Image Uploader Project Application Console focused on the app-cli Deployment Config](/images/app-cli_gui.png)
 
-To deploy an application from the web interface, click the _Add To Project_ button in the top right corner, followed by _Browse Catalog_.
+To deploy an application from the web interface, click the _+ Add_ button in the top right corner, followed by _Browse Catalog_.
 
-![Add to Project -> Browse Catalog Menu in OpenShift Container Platform](/images/ocp_add_to_project.png) ## TODO Update pic
+![Add to Project -> Browse Catalog Menu in OpenShift Container Platform](/images/ocp_add_to_project.png)
 
 This button brings up the Service Catalog. The 100+ templates available in today's lab are just what's available out of the box in OpenShift. You and your developers can also create custom templates and add them to a single project or make them available to your entire cluster. Other platforms can also be integrated into your OpenShift Catalog. Ansible, AWS, Azure, and other service brokers are available for integration with OpenShift today.
 
-![OpenShift Service Catalog view inside of the Application Console](/images/ocp_service_catalog.png) ## TODO Update pic
+![OpenShift Service Catalog view inside of the Application Console](/images/ocp_service_catalog.png)
 
-Using the _Search Catalog_ form, search for PHP, because the Image Uploader application is written using PHP. You'll get 3 search results back.
+Using the search bar, search for PHP, because the Image Uploader application is written using PHP.
 
-![PHP Search Results in the OpenShift Service Catalog](/images/ocp_php_results.png) ## TODO Update pic
+![PHP Search Results in the OpenShift Service Catalog](/images/ocp_php_results.png)
 
-Image Uploader is a simple application that doesn't require a database. So we'll just select the PHP builder image, which is the same image we used when we deployed the same application from the command line. Selecting this option takes you to a simple wizard that helps deploy your application. Supply the same git repository you used for `app-cli` (https://github.com/OpenShiftInAction/image-uploader.git), give it the name `app-gui`, and click Create.
+Image Uploader is a simple application that doesn't require a database. So we'll just select the PHP builder image, which is the same image we used when we deployed the same application from the command line. Selecting this option takes you to a simple wizard that helps deploy your application. Supply the same git repository you used for `app-cli` (https://github.com/OpenShiftInAction/image-uploader.git), give it the name `app-gui`, check Create route, and click Create.
 
-![OpenShift PHP Web Console Build Wizard](/images/ocp_app-gui_wizard.png) ## TODO Update pic
+![OpenShift PHP Web Console Build Wizard](/images/ocp_app-gui_wizard.png)
 
-You'll get a confirmation that the build has started. Click the _Continue to project overview_ link to return to the Image Uploader project. You'll notice that the `app-gui` build is progressing quickly.
+You'll be returned to the project. Click on the _Resources_ tab to see the build pod running. Watch as the build completes and the app-gui pod is deployed.
 
-![Image Uploader Project Application Console focused on the app-gui Deployment Config](/images/ocp_app-gui_build.png) ## TODO Update pic
+![Image Uploader Project Application Console focused on the app-gui Deployment Config](/images/ocp_app-gui_build.png)
 
 After the build completes, the deployment of the custom container image starts and quickly completes. A route is then created and automatically associated with `app-gui`. And just like that, you've deployed multiple instances of the same application with different URLs onto your OpenShift platform.
 
@@ -793,22 +806,27 @@ OpenShift uses a complex software-defined network solution using [Open vSwitch (
 At a fundamental level, OpenShift creates an OVS bridge and attaches a TUN and VXLAN interface. The VXLAN interface routes requests between nodes on the cluster, and the TUN interface routes traffic off of the cluster using the node's default gateway. Each container also creates a `veth` interface that is linked to the `eth0` interface in a specific container using [kernel interface linking](https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-net). You can see this on your nodes by running the `ovs-vsct list-br` command.
 
 ```
-$ ovs-vsctl list-br
+$ oc project openshift-sdn
+Now using project "openshift-sdn" on server "https://api.cluster-btws-6505.btws-6505.open.redhat.com:6443".
+$ oc rsh sdn-zmxwb        
+sh-4.2# ovs-vsctl list-br
 br0
 ```
 
 This lists the OVS bridges on the host. To see the interfaces within the bridge, run the following command. Here you can see the `vxlan`, `tun`, and `veth` interfaces within the bridge.
 
 ```
-$ ovs-vsctl list-ifaces br0
+sh-4.2# ovs-vsctl list-ifaces br0
 tun0
-veth1903c0e4
-veth2daf2599
-veth6afcc070
-veth77b9379f
-veth9406531e
-veth97389395
+veth21741a49
+veth29ca1093
+veth2a2f8d07
+...
+vethd4385486
+vethecd29240
+vethfd45d761
 vxlan0
+
 ```
 
 Logically, the networking configuration on an OpenShift node looks like the graphic below.
@@ -819,54 +837,52 @@ When networking isn't working as you expect, and you've already ruled out DNS (f
 
 #### 2.3.7: Routing layer
 
-The routing layer inside OpenShift uses HAProxy by default. It's function is to map the publicly available route you assign to an application and map it back to the corresponding pods in your cluster. Each time an application or route is updated (created, retired, scaled up or down), the configuration in HAProxy is updated by OpenShift. HAProxy runs in a pod in the default project on your infrastructure node.
+The routing layer inside OpenShift uses HAProxy by default. It's function is to map the publicly available route you assign to an application and map it back to the corresponding pods in your cluster. Each time an application or route is updated (created, retired, scaled up or down), the configuration in HAProxy is updated by OpenShift. HAProxy runs in a pod in the openshift-ingress project on your worker node.
 
 ```
-$ oc project default
-Now using project "default" on server "https://master.btws-6e50.openshiftworkshop.com:443".
+$ oc project openshift-ingress
+Now using project "openshift-ingress" on server "https://api.cluster-btws-6505.btws-6505.open.redhat.com:6443".
 $ oc get pods
-NAME                          READY   STATUS    RESTARTS   AGE
-docker-registry-1-j7hxb       1/1     Running   0          20h
-logging-eventrouter-1-plbqk   1/1     Running   0          20h
-registry-console-1-59clb      1/1     Running   0          20h
-router-2-2zh8h                1/1     Running   0          20h
+NAME                              READY   STATUS    RESTARTS   AGE
+router-default-565b875b8f-6jz5m   0/1     Pending   0          69s
+router-default-565b875b8f-vd2bq   1/1     Running   0          98m
+
 ```
 
 If you know the name of a pod, you can us `oc rsh` to connect to it remotely. This is doing some fun magic using `ssh` and `nsenter` under the covers to provide a connection to the proper node inside the proper namespaces for the pod. Looking in the `haproxy.config` file for references to `app-cli` gives displays your router configuration for that application. Ctrl-D will exit out of your `rsh` session.
 
 ```
-$ oc rsh router-2-2zh8h
+$ oc rsh router-default-565b875b8f-vd2bq
 sh-4.2$ grep app-cli haproxy.config
 backend be_http:image-uploader:app-cli
-  server pod:app-cli-1-cdjd8:app-cli:10.1.2.10:8080 10.1.2.10:8080 cookie 3da20208fff607747e80c32e4e9a1eb4 weight 256 check inter 5000ms
-  server pod:app-cli-1-rkxt4:app-cli:10.1.2.8:8080 10.1.2.8:8080 cookie 1927a94d903b1671af33f2daaad0d86e weight 256 check inter 5000ms
-  server pod:app-cli-1-6hlq6:app-cli:10.1.2.9:8080 10.1.2.9:8080 cookie 3259a6df68f9840717af88209f7650e6 weight 256 check inter 5000ms
-sh-4.2$ exit
+  server pod:app-cli-1-rwvx2:app-cli:10.131.0.36:8080 10.131.0.36:8080 cookie 1702f35f742d5e8117de84fa19e12304 weight 256 check inter 5000ms
+  server pod:app-cli-1-2ghrn:app-cli:10.131.0.37:8080 10.131.0.37:8080 cookie d19292b591a71f73177763b59c809020 weight 256 check inter 5000ms
+  server pod:app-cli-1-xtwk8:app-cli:10.131.0.38:8080 10.131.0.38:8080 cookie a33e59025d3469285e05b257eecae50d weight 256 check inter 5000ms
 ```
 
 If you use the `oc get pods` command for the Image Uploader project and limit its output for the `app-cli` application, you can see the IP addresses in HAProxy match the pods for the application.
 
 ```
 $ oc get pods -l app=app-cli -n image-uploader -o wide
-NAME              READY   STATUS    RESTARTS   AGE   IP          NODE                        NOMINATED NODE
-app-cli-1-6hlq6   1/1     Running   0          12m   10.1.2.9    node1.btws-6e50.internal   <none>
-app-cli-1-cdjd8   1/1     Running   0          12m   10.1.2.10   node1.btws-6e50.internal   <none>
-app-cli-1-rkxt4   1/1     Running   0          14m   10.1.2.8    node1.btws-6e50.internal   <none>
+NAME              READY   STATUS    RESTARTS   AGE   IP            NODE                          NOMINATED NODE   READINESS GATES
+app-cli-1-2ghrn   1/1     Running   0          55m   10.131.0.37   ip-10-0-129-52.ec2.internal   <none>           <none>
+app-cli-1-rwvx2   1/1     Running   0          61m   10.131.0.36   ip-10-0-129-52.ec2.internal   <none>           <none>
+app-cli-1-xtwk8   1/1     Running   0          55m   10.131.0.38   ip-10-0-129-52.ec2.internal   <none>           <none>
 ```
 
 To confirm HAProxy is automatically updated, let's scale `app-cli` back down to 1 pod and re-check the router configuration.
 
 ```
 $ oc scale dc/app-cli -n image-uploader --replicas=1
-deploymentconfig.apps.openshift.io "app-cli" scaled
+deploymentconfig.apps.openshift.io/app-cli scaled
 
 $ oc get pods -l app=app-cli -n image-uploader -o wide
-NAME              READY   STATUS    RESTARTS   AGE   IP         NODE                        NOMINATED NODE
-app-cli-1-rkxt4   1/1     Running   0          15m   10.1.2.8   node1.btws-6e50.internal   <none>
+NAME              READY   STATUS    RESTARTS   AGE   IP            NODE                          NOMINATED NODE   READINESS GATES
+app-cli-1-rwvx2   1/1     Running   0          62m   10.131.0.36   ip-10-0-129-52.ec2.internal   <none>           <none>
 
-$ oc exec router-2-2zh8h grep app-cli haproxy.config
+$ oc exec router-default-565b875b8f-vd2bq grep app-cli haproxy.config
 backend be_http:image-uploader:app-cli
-  server pod:app-cli-1-rkxt4:app-cli:10.1.2.8:8080 10.1.2.8:8080 cookie 1927a94d903b1671af33f2daaad0d86e weight 256 check inter 5000ms
+  server pod:app-cli-1-rwvx2:app-cli:10.131.0.36:8080 10.131.0.36:8080 cookie 1702f35f742d5e8117de84fa19e12304 weight 256 check inter 5000ms
 ```
 
 We were able to confirm that our HAProxy configuration updates automatically when applications are updated.
@@ -887,7 +903,7 @@ We know this is a mountain of content. Our goal is to present you with informati
  [getting started guide](https://github.com/operator-framework/operator-sdk/blob/master/doc/ansible/user-guide.md)
 
 
- ## I'm working on developing a very basic Ansible operator that will manage namespaces and their resource quotas. I think this is a good use case since we already cover resource quotas and there are a number of other functionality we can challenge them to develop. ex) namespace clean up, smart quota increasing
+[//]: # I'm working on developing a very basic Ansible operator that will manage namespaces and their resource quotas. I think this is a good use case since we already cover resource quotas and there are a number of other functionality we can challenge them to develop. ex) namespace clean up, smart quota increasing
 
 
 ### 3.3: Summary
@@ -898,7 +914,7 @@ This section has been about the deeper relationship between OpenShift and Ansibl
 
 ## 4: A real world CI/CD scenario
 
- ## I still like this workflow, but I think we can provide the participants with a CICD operator to create everything to demonstrate namespace scoped operators. Then we come back with the namespace config operator to manage the created namespaces to show what and admin would be worrying about... Some thing in the vein of this but as an ansibl operator (https://github.com/redhat-cop/namespace-configuration-operator/tree/master)
+ [//]: # I still like this workflow, but I think we can provide the participants with a CICD operator to create everything to demonstrate namespace scoped operators. Then we come back with the namespace config operator to manage the created namespaces to show what and admin would be worrying about... Some thing in the vein of this but as an ansibl operator (https://github.com/redhat-cop/namespace-configuration-operator/tree/master)
 
 In the final section of our workshop, we'll take everything we've been discussing and put it into practice with a large, complex, real-work workflow. In your cluster, you'll create multiple projects and use a Jenkins pipeline workflow that:
 
@@ -914,7 +930,7 @@ This is a complete analog to a modern CI/CD workflow, implemented 100% within Op
 
 ```
 cd ~
-git clone --branch ocp-3.11 https://github.com/siamaksade/openshift-cd-demo.git 
+git clone --branch ocp-4.1 https://github.com/siamaksade/openshift-cd-demo.git 
 cd openshift-cd-demo
 ```
 
