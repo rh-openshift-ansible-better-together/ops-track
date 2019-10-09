@@ -67,7 +67,7 @@ For users who are running Linux, macOS, or Windows with the Windows Subsystem fo
 
 ```
 chmod 600 <INSERT_PATH_TO_PRIVATE_KEY>/ocp-workshop.pem
-ssh -i <INSERT_PATH_TO_PRIVATE_KEY>/ocp-workshop.pem ec2-user@bastion.<INSERT_GUID_HERE>.openshiftworkshop.com
+ssh -i <INSERT_PATH_TO_PRIVATE_KEY>/ocp-workshop.pem ec2-user@bastion.<INSERT_GUID_HERE>.open.redhat.com
 ```
 
 For users who are running Windows and using PuTTY for SSH, follow the below directions:
@@ -76,7 +76,7 @@ For users who are running Windows and using PuTTY for SSH, follow the below dire
 2. In PuTTY, under _Category_ on the left, navigate to _Connection_ -> _SSH_ -> _Auth_.
 3. On the right under _Authentication_ parameters, click _Browse_ and locate the private key (ocp-workshop.ppk) you saved earlier.
 4. On the left, navigate to _Session_.
-5. On the right in the _Host Name_ field, ec2-user@bastion.<INSERT_GUID_HERE>.openshiftworkshop.com
+5. On the right in the _Host Name_ field, ec2-user@bastion.<INSERT_GUID_HERE>.open.redhat.com
 6. Click _Open_.
 7. When prompted with the security alert, click _Yes_.
 
@@ -90,10 +90,10 @@ $ export GUID=<INSERT_GUID_HERE>
 And finally, we need to login to the OpenShift cluster using the `oc` tools. To do so, run the following command:
 
 ```
-$ oc login https://master.<INSERT_GUID_HERE>.openshiftworkshop.com
+$ oc login https://master.<INSERT_GUID_HERE>.open.redhat.com
 ```
 
-When prompted, login with the username `opentlc-mgr` and the password that is provided in the cluster assignment tool.
+When prompted, login with the username `opentlc-mgr` and the password `r3dh4t1!`
 
 You are now ready to start working through the workshop.
 
@@ -415,7 +415,7 @@ Applications deployed in OpenShift are separated into projects. Projects are use
 
 ```
 $ oc new-project image-uploader --display-name="Image Uploader Project"
-Now using project "image-uploader" on server "https://master.btws-6e50.openshiftworkshop.com:443".
+Now using project "image-uploader" on server "https://master.btws-6e50.open.redhat.com:443".
 
 You can add applications to this project with the 'new-app' command. For example, try:
 
@@ -668,7 +668,7 @@ To see and confirm our route, use the `oc get routes` command.
 ```
 $ oc get routes
 NAME      HOST/PORT                                                      PATH   SERVICES   PORT       TERMINATION   WILDCARD
-app-cli   app-cli-image-uploader.apps.btws-6e50.openshiftworkshop.com          app-cli    8080-tcp                 None
+app-cli   app-cli-image-uploader.apps.btws-6e50.open.redhat.com          app-cli    8080-tcp                 None
 ```
 
 If you browse to your newly created route, you should see the Image Uploader application, ready for use.
@@ -701,7 +701,7 @@ Using a single command, you just scaled your application from 1 instance to 3 in
 
 #### 2.3.5: Using the web interface
 
-The web interface for OpenShift makes additional assumptions when its used. The biggest difference you'll notice compared to the CLI is that routes are automatically created when applications are deployed. This can be altered, but it is the default behavior. To get started, browse to the OpenShift Console URL provided by the cluster assignment tool (it will be in the format of https://master.<INSERT_GUID_HERE>.openshiftworkshop.com/console), and login with the username `opentlc-mgr` and the password provided by the cluster assignment tool.
+The web interface for OpenShift makes additional assumptions when its used. The biggest difference you'll notice compared to the CLI is that routes are automatically created when applications are deployed. This can be altered, but it is the default behavior. To get started, browse to the OpenShift Console URL provided by the cluster assignment tool (it will be in the format of https://master.<INSERT_GUID_HERE>.open.redhat.com/console), and login with the username `opentlc-mgr` and the password provided by the cluster assignment tool.
 
 ![OpenShift Container Platform Login Page](/images/ocp_login.png)
 
@@ -774,7 +774,7 @@ The routing layer inside OpenShift uses HAProxy by default. It's function is to 
 
 ```
 $ oc project default
-Now using project "default" on server "https://master.btws-6e50.openshiftworkshop.com:443".
+Now using project "default" on server "https://master.btws-6e50.open.redhat.com:443".
 $ oc get pods
 NAME                          READY   STATUS    RESTARTS   AGE
 docker-registry-1-j7hxb       1/1     Running   0          20h
@@ -964,7 +964,7 @@ To demonstrate this, let's first create a project to play with by running the fo
 
 ```
 $ oc new-project troubleshooting
-Now using project "troubleshooting" on server "https://master.btatl-6e50.openshiftworkshop.com:443".
+Now using project "troubleshooting" on server "https://master.btatl-6e50.open.redhat.com:443".
 
 You can add applications to this project with the 'new-app' command. For example, try:
 
@@ -1141,12 +1141,12 @@ Now, let's debug external access to the service:
 
 ```
 $ curl -kv $ENDPOINT
-* Rebuilt URL to: http://network-example-troubleshooting.apps.btatl-6e50.openshiftworkshop.com/
+* Rebuilt URL to: http://network-example-troubleshooting.apps.btatl-6e50.open.redhat.com/
 *   Trying 3.218.186.47...
 * TCP_NODELAY set
-* Connected to network-example-troubleshooting.apps.btatl-6e50.openshiftworkshop.com (3.218.186.47) port 80 (#0)
+* Connected to network-example-troubleshooting.apps.btatl-6e50.open.redhat.com (3.218.186.47) port 80 (#0)
 > GET / HTTP/1.1
-> Host: network-example-troubleshooting.apps.btatl-6e50.openshiftworkshop.com
+> Host: network-example-troubleshooting.apps.btatl-6e50.open.redhat.com
 > User-Agent: curl/7.54.0
 > Accept: */*
 >
@@ -1156,7 +1156,7 @@ $ curl -kv $ENDPOINT
 < Set-Cookie: bdf8c5d069e23263d0c1d884fb88fb93=475e6f2c7603354e481c3a155c346c41; path=/; HttpOnly
 < Cache-control: private
 <
-* Connection #0 to host network-example-troubleshooting.apps.btatl-6e50.openshiftworkshop.com left intact
+* Connection #0 to host network-example-troubleshooting.apps.btatl-6e50.open.redhat.com left intact
 ```
 
 Note that the HTTP response code is 200, so all appears to be well with this application. 
