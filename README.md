@@ -54,10 +54,8 @@ Each workshop participant is provisioned their own OpenShift Container Platform 
 
 You'll need to claim your OpenShift cluster using our [cluster assignment tool](https://bit.ly/35l0gjR). Once you get to the cluster assignment tool, you'll need two pieces of information:
 
-* Lab Code: `BetterTogether<INSERT CITY CODE HERE> - BetterTogether Ansible + OpenShift: OPS`
+* Lab Code: `BetterTogetherDFW - BetterTogether Ansible + OpenShift: OPS`
 * Activation Key: `ansible+openshift`
-
-Where `<INSERT CITY CODE HERE>` is: DFW
 
 Once you enter the information into the cluster assignment tool, you'll receive a few pieces of information. It is important to keep this window open during the workshop. The first (and one of the most important) pieces of information you will receive is a "GUID" in the format `btws-<4_RANDOM_CHARACTERS>` (for example, `btws-j1e2`). It is important to keep this GUID handy for the rest of the lab. 
 
