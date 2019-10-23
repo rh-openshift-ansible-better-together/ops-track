@@ -476,10 +476,57 @@ To confirm your limits have been applied, run the `oc get limitrange` command.
 $ oc get limitrange
 NAME                   AGE
 core-resource-limits   2m
+image-uploader-core-resource-limits   3m
 ```
 
-The limitrange you just created applies to any applications deployed in the `image-uploader` project. Next, you're going to create resource limits for the entire project. Create a file named `/root/compute-resources.yaml` on your bastion host. It should contain the following content.
+The limitrange you just created applies to any applications deployed in the `image-uploader` project. 
+Now, lets edit a limitrange that was created by the system `image-uploader-core-resource-limits` when you created the project. This limitrange is part of the default template OpenShift uses to assign additional limits if 
+a limitrange is not created by a user for a project.
+```
+oc edit limitrange image-uploader-core-resource-limits
+```
+```
+apiVersion: v1
+kind: LimitRange
+metadata:
+  creationTimestamp: 2019-10-23T10:02:05Z
+  name: image-uploader-core-resource-limits
+  namespace: image-uploader
+  resourceVersion: "175624"
+  selfLink: /api/v1/namespaces/image-uploader/limitranges/image-uploader-core-resource-limits
+  uid: 2aab1c32-f57c-11e9-a92e-1262a7251a30
+spec:
+  limits:
+  - default:
+      cpu: 500m
+      memory: 1536Mi
+    defaultRequest:
+      cpu: 50m
+      memory: 256Mi
+    max:
+      cpu: "2"
+      memory: 6Gi
+    type: Container
+  - max:
+      cpu: "2"
+      memory: 12Gi
+    type: Pod
+```
+There are 2 fields that you going to need to change
+From:
+```
+memory: 1536Mi
+cpu: 50m
+```
+To:
+```
+memory: 1024Mi
+cpu: 100m
+```
+This will allow you to properly create the applications on the following steps below
 
+
+Next, you're going to create resource limits for the entire project. Create a file named `/root/compute-resources.yaml` on your bastion host. It should contain the following content.
 ```
 apiVersion: v1
 kind: ResourceQuota
@@ -694,7 +741,7 @@ app-cli-1-build   0/1     Completed   0          3m    10.1.2.6    node1.btws-6e
 app-cli-1-cdjd8   1/1     Running     0          14s   10.1.2.10   node1.btws-6e50.internal   <none>
 app-cli-1-rkxt4   1/1     Running     0          2m    10.1.2.8    node1.btws-6e50.internal   <none>
 ```
-                  
+
 Using a single command, you just scaled your application from 1 instance to 3 instances on 2 servers in a matter of seconds. Compare that to what your application scaling process is using VMs or bare metal systems; or even things like Amazon ECS or just Docker. It's pretty amazing. Next, let's do the same thing using the web interface.
 
 #### 2.3.5: Using the web interface
@@ -739,15 +786,61 @@ Next, let's take a quick look at what is going on with your newly deployed appli
 
 OpenShift uses a complex software-defined network solution using [Open vSwitch (OVS)](https://www.openvswitch.org/) that creates multiple interfaces for each container and routes traffic through VXLANs to other nodes in the cluster or through a TUN interface to route out of your cluster and into other networks.
 
-At a fundamental level, OpenShift creates an OVS bridge and attaches a TUN and VXLAN interface. The VXLAN interface routes requests between nodes on the cluster, and the TUN interface routes traffic off of the cluster using the node's default gateway. Each container also creates a `veth` interface that is linked to the `eth0` interface in a specific container using [kernel interface linking](https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-net). You can see this on your nodes by running the `ovs-vsct list-br` command.
+At a fundamental level, OpenShift creates an OVS bridge and attaches a TUN and VXLAN interface. The VXLAN interface routes requests between nodes on the cluster, and the TUN interface routes traffic off of the cluster using the node's default gateway. Each container also creates a `veth` interface that is linked to the `eth0` interface in a specific container using [kernel interface linking](https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-net). Lets try this out.
 
+Switch to the SDN namespace
+```
+oc project openshift-snd
+```
+
+followed by listing the pods
+```
+oc get pods
+
+NAME                   READY     STATUS    RESTARTS   AGE
+ovs-28ljk              1/1       Running   0          7h56m
+ovs-5k6kt              1/1       Running   0          7h51m
+ovs-9wthz              1/1       Running   0          7h51m
+ovs-b29tq              1/1       Running   0          7h51m
+ovs-c89tj              1/1       Running   0          7h56m
+ovs-fvqzt              1/1       Running   0          7h56m
+ovs-jngh9              1/1       Running   0          7h51m
+ovs-jwwlz              1/1       Running   0          7h51m
+ovs-kccn6              1/1       Running   0          7h51m
+ovs-krdvt              1/1       Running   0          7h51m
+ovs-m9jz4              1/1       Running   0          7h51m
+ovs-pfb2c              1/1       Running   0          7h51m
+ovs-rkn4s              1/1       Running   0          7h51m
+sdn-5xsfw              1/1       Running   0          7h51m
+sdn-7tjnx              1/1       Running   0          7h51m
+sdn-controller-lzsln   1/1       Running   0          7h56m
+sdn-controller-wghfk   1/1       Running   0          7h56m
+sdn-controller-z7cxc   1/1       Running   0          7h56m
+sdn-d4tj8              1/1       Running   0          7h56m
+sdn-f8s6r              1/1       Running   0          7h51m
+sdn-fshpq              1/1       Running   2          7h56m
+sdn-kd72h              1/1       Running   0          7h51m
+sdn-nbdnb              1/1       Running   0          7h51m
+sdn-ngljs              1/1       Running   0          7h51m
+sdn-qhvwt              1/1       Running   0          7h51m
+sdn-tpss9              1/1       Running   0          7h51m
+sdn-w7w64              1/1       Running   0          7h51m
+sdn-w846x              1/1       Running   0          7h51m
+sdn-wpr9f              1/1       Running   0          7h56m
+```
+
+followed by connecting to one of the ovs-<number> pods
+```
+oc rsh ovs-28ljk
+```
+
+and finally running the below commands
 ```
 $ ovs-vsctl list-br
 br0
 ```
 
 This lists the OVS bridges on the host. To see the interfaces within the bridge, run the following command. Here you can see the `vxlan`, `tun`, and `veth` interfaces within the bridge.
-
 ```
 $ ovs-vsctl list-ifaces br0
 tun0
