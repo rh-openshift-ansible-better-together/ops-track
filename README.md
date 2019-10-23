@@ -88,7 +88,7 @@ $ export GUID=<INSERT_GUID_HERE>
 And finally, we need to login to the OpenShift cluster using the `oc` tools. To do so, run the following command:
 
 ```
-$ oc login https://master.<INSERT_GUID_HERE>.open.redhat.com
+$ oc login https://master.${GUID}.open.redhat.com
 ```
 
 When prompted, login with the username `opentlc-mgr` and the password `r3dh4t1!`
