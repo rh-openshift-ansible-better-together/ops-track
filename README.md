@@ -52,12 +52,12 @@
 
 Each workshop participant is provisioned their own OpenShift Container Platform 3.11 cluster (using Ansible!). Each cluster contains one master node, one infrastructure node, one application node, and one bastion host. You will be working from the bastion host to complete today's lab. 
 
-You'll need to claim your OpenShift cluster using our [cluster assignment tool](https://bit.ly/35l0gjR). Once you get to the cluster assignment tool, you'll need two pieces of information:
+You'll need to claim your OpenShift cluster using our [ALB - cluster assignment tool](https://red.ht/alb-ops). Once you get to the cluster assignment tool, you'll need two pieces of information:
 
-* Lab Code: `BetterTogetherDFW - BetterTogether Ansible + OpenShift: OPS`
+* Lab Code: `BetterTogether - BetterTogether Ansible + OpenShift: OPS`
 * Activation Key: `ansible+openshift`
 
-Once you enter the information into the cluster assignment tool, you'll receive a few pieces of information. It is important to keep this window open during the workshop. The first (and one of the most important) pieces of information you will receive is a "GUID" in the format `btws-<4_RANDOM_CHARACTERS>` (for example, `btws-j1e2`). It is important to keep this GUID handy for the rest of the lab. 
+Once you enter the information into the cluster assignment tool, you'll receive a few pieces of information. It is important to keep this window open during the workshop. The first (and one of the most important) pieces of information you will receive is a "GUID" in the format `alb-<4_RANDOM_CHARACTERS>` (for example, `alb-j1e2`). It is important to keep this GUID handy for the rest of the lab. 
 
 To SSH to the bastion host, you'll need to download the private SSH key from the link provided in the cluster assignment tool. Select your operating system from the list and save the file to a location you remember. 
 
@@ -276,7 +276,7 @@ UTS stands for "Unix Time Sharing". This is a concept that has been around since
 
 ```
 $ uname -a
-Linux infranode1.btws-6e50.internal 3.10.0-957.21.3.el7.x86_64 #1 SMP Fri Jun 14 02:54:29 EDT 2019 x86_64 x86_64 x86_64 GNU/Linux
+Linux infranode1.alb-6e50.internal 3.10.0-957.21.3.el7.x86_64 #1 SMP Fri Jun 14 02:54:29 EDT 2019 x86_64 x86_64 x86_64 GNU/Linux
 ``` 
 
 Each container in OpenShift gets its own UTS namespace, which is equivalent to its own `uname -a` output. That means each container gets its own hostname and domain name. This is extremely useful in a large distributed application platform like OpenShift.
@@ -285,7 +285,7 @@ We can see this in action using `nsenter`.
 
 ```
 $ hostname
-infranode1.btws-6e50.internal
+infranode1.alb-6e50.internal
 $ sudo nsenter -u -t 43747
 [root@heapster-kclzv ec2-user]# hostname
 heapster-kclzv
@@ -413,7 +413,7 @@ Applications deployed in OpenShift are separated into projects. Projects are use
 
 ```
 $ oc new-project image-uploader --display-name="Image Uploader Project"
-Now using project "image-uploader" on server "https://master.btws-6e50.open.redhat.com:443".
+Now using project "image-uploader" on server "https://master.alb-6e50.open.redhat.com:443".
 
 You can add applications to this project with the 'new-app' command. For example, try:
 
@@ -713,7 +713,7 @@ To see and confirm our route, use the `oc get routes` command.
 ```
 $ oc get routes
 NAME      HOST/PORT                                                      PATH   SERVICES   PORT       TERMINATION   WILDCARD
-app-cli   app-cli-image-uploader.apps.btws-6e50.open.redhat.com          app-cli    8080-tcp                 None
+app-cli   app-cli-image-uploader.apps.alb-6e50.open.redhat.com          app-cli    8080-tcp                 None
 ```
 
 If you browse to your newly created route, you should see the Image Uploader application, ready for use.
@@ -736,10 +736,10 @@ Because your second application node doesn't have the custom container image for
 ```
 $ oc get pods -o wide
 NAME              READY   STATUS      RESTARTS   AGE   IP          NODE                        NOMINATED NODE
-app-cli-1-6hlq6   1/1     Running     0          14s   10.1.2.9    node1.btws-6e50.internal   <none>
-app-cli-1-build   0/1     Completed   0          3m    10.1.2.6    node1.btws-6e50.internal   <none>
-app-cli-1-cdjd8   1/1     Running     0          14s   10.1.2.10   node1.btws-6e50.internal   <none>
-app-cli-1-rkxt4   1/1     Running     0          2m    10.1.2.8    node1.btws-6e50.internal   <none>
+app-cli-1-6hlq6   1/1     Running     0          14s   10.1.2.9    node1.alb-6e50.internal   <none>
+app-cli-1-build   0/1     Completed   0          3m    10.1.2.6    node1.alb-6e50.internal   <none>
+app-cli-1-cdjd8   1/1     Running     0          14s   10.1.2.10   node1.alb-6e50.internal   <none>
+app-cli-1-rkxt4   1/1     Running     0          2m    10.1.2.8    node1.alb-6e50.internal   <none>
 ```
 
 Using a single command, you just scaled your application from 1 instance to 3 instances on 2 servers in a matter of seconds. Compare that to what your application scaling process is using VMs or bare metal systems; or even things like Amazon ECS or just Docker. It's pretty amazing. Next, let's do the same thing using the web interface.
@@ -865,7 +865,7 @@ The routing layer inside OpenShift uses HAProxy by default. It's function is to 
 
 ```
 $ oc project default
-Now using project "default" on server "https://master.btws-6e50.open.redhat.com:443".
+Now using project "default" on server "https://master.alb-6e50.open.redhat.com:443".
 $ oc get pods
 NAME                          READY   STATUS    RESTARTS   AGE
 docker-registry-1-j7hxb       1/1     Running   0          20h
@@ -891,9 +891,9 @@ If you use the `oc get pods` command for the Image Uploader project and limit it
 ```
 $ oc get pods -l app=app-cli -n image-uploader -o wide
 NAME              READY   STATUS    RESTARTS   AGE   IP          NODE                        NOMINATED NODE
-app-cli-1-6hlq6   1/1     Running   0          12m   10.1.2.9    node1.btws-6e50.internal   <none>
-app-cli-1-cdjd8   1/1     Running   0          12m   10.1.2.10   node1.btws-6e50.internal   <none>
-app-cli-1-rkxt4   1/1     Running   0          14m   10.1.2.8    node1.btws-6e50.internal   <none>
+app-cli-1-6hlq6   1/1     Running   0          12m   10.1.2.9    node1.alb-6e50.internal   <none>
+app-cli-1-cdjd8   1/1     Running   0          12m   10.1.2.10   node1.alb-6e50.internal   <none>
+app-cli-1-rkxt4   1/1     Running   0          14m   10.1.2.8    node1.alb-6e50.internal   <none>
 ```
 
 To confirm HAProxy is automatically updated, let's scale `app-cli` back down to 1 pod and re-check the router configuration.
@@ -904,7 +904,7 @@ deploymentconfig.apps.openshift.io "app-cli" scaled
 
 $ oc get pods -l app=app-cli -n image-uploader -o wide
 NAME              READY   STATUS    RESTARTS   AGE   IP         NODE                        NOMINATED NODE
-app-cli-1-rkxt4   1/1     Running   0          15m   10.1.2.8   node1.btws-6e50.internal   <none>
+app-cli-1-rkxt4   1/1     Running   0          15m   10.1.2.8   node1.alb-6e50.internal   <none>
 
 $ oc exec router-2-2zh8h grep app-cli haproxy.config
 backend be_http:image-uploader:app-cli
