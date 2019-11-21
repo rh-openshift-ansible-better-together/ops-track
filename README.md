@@ -89,7 +89,7 @@ And finally, we need to login to the OpenShift cluster using the `oc` tools. To 
 
 ```
 $ oc login https://master.${GUID}.open.redhat.com
-```
+``` 
 
 When prompted, login with the username `opentlc-mgr` and the password `r3dh4t1!`
 
@@ -790,7 +790,7 @@ At a fundamental level, OpenShift creates an OVS bridge and attaches a TUN and V
 
 Switch to the SDN namespace
 ```
-oc project openshift-snd
+oc project openshift-sdn
 ```
 
 followed by listing the pods
@@ -926,8 +926,8 @@ Deploying and managing an OpenShift cluster is controlled by Ansible. The [opens
 Your entire OpenShift cluster was deployed using Ansible. The inventory used to deploy your cluster is on your bastion host at the default inventory location for Ansible, /etc/ansible/hosts. To deploy an OpenShift cluster on RHEL 7, after registering it and subscribing it to the proper repositories two Ansible playbooks need to be run:
 
 ```
-ansible-playook /usr/share/ansible/openshift-ansible/playbooks/prerequisites.yml
-ansible-playook /usr/share/ansible/openshift-ansible/playbooks/deploy_cluster.yml
+ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/prerequisites.yml
+ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/deploy_cluster.yml
 ```
 
 The deployment process takes 30-40 minutes to complete, depending on the size of your cluster. To save that time, we've got you covered and have already deployed your OpenShift cluster using Ansible.
