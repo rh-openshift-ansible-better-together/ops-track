@@ -1,0 +1,5 @@
+---
+- version: v1alpha1
+  group: better.together.io
+  kind: ManagedNamespace
+  role: /opt/ansible/roles/managednamespace
