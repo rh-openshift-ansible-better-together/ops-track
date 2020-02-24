@@ -20,7 +20,7 @@ spec:
           - /tmp/ansible-operator/runner
           - stdout
           # Replace this with the built image name
-          image: "quay.io/gnekic/managed-namespace-operator:v0.0.1"
+          image: "quay.io/gnekic/managed-namespace-operator:v0.0.2"
           imagePullPolicy: "Always"
           volumeMounts:
           - mountPath: /tmp/ansible-operator/runner
@@ -28,7 +28,7 @@ spec:
             readOnly: true
         - name: operator
           # Replace this with the built image name
-          image: "quay.io/gnekic/managed-namespace-operator:v0.0.1"
+          image: "quay.io/gnekic/managed-namespace-operator:v0.0.2"
           imagePullPolicy: "Always"
           volumeMounts:
           - mountPath: /tmp/ansible-operator/runner
