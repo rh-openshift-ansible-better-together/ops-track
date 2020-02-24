@@ -1,2 +1,25 @@
 ---
-# tasks file for managednamespace
+# tasks file for initproject
+
+
+- name: Create Namespace
+  k8s:
+    state: present
+    definition:
+      kind: Namespace
+      apiVersion: v1
+      metadata:
+        annotations:
+          nekic.io/size: "{{ size }}"
+        name: "{{ namespace_name }}"
+
+- name: Create Resource Quota
+  k8s:
+    state: present
+    definition: "{{ lookup('template', '{{ size }}-resourcequota.yml.j2' ) }}"
+
+- name: Create Limit Range
+  k8s:
+    state: present
+    definition: "{{ lookup('template', '{{ size }}-limitrange.yml.j2' ) }}"
+

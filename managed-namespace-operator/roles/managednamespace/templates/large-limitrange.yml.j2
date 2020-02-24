@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: resource-limits
+  annotations:
+    nekic.io/size: "{{ size }}"
+  namespace: "{{ project_name }}"
+spec:
+  limits:
+    - type: "Pod"
+      max:
+        cpu: "8" 
+        memory: "16Gi" 
+      min:
+        cpu: "200m" 
+        memory: "6Mi" 
+    - type: "Container"
+      max:
+        cpu: "8" 
+        memory: "16Gi" 
+      min:
+        cpu: "200m" 
+        memory: "6Mi" 
+      default:
+        cpu: "1" 
+        memory: "1Gi" 
+      defaultRequest:
+        cpu: "500m" 
+        memory: "500Mi" 
