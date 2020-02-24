@@ -2,7 +2,7 @@ apiVersion: v1
 kind: LimitRange
 metadata:
   name: resource-limits
-  namespace: "{{ project_name }}"
+  namespace: "{{ namespace_name }}"
 spec:
   limits:
     - type: "Pod"
