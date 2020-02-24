@@ -1,0 +1,128 @@
+---
+
+- name: Cluster Validatoin
+  hosts: bastions
+  run_once: yes
+  gather_facts: false
+  become: false
+  vars_files:
+    - ./myvars.yaml
+  tags:
+  - validate_cluster
+  tasks:
+    - 
+      #environment:
+      #  KUBECONFIG: "{{ cluster_name }}/auth/kubeconfig"
+      ignore_errors: yes
+      block:
+        - name: Get API for command line
+          command: oc whoami --show-server
+          register: showserver
+
+        - block:
+            - name: Get registry route
+              command: oc get route -n openshift-image-registry default-route -o json
+              register: routeregistry
+              retries: 10
+              delay: 30
+              until: routeregistry is succeeded
+              ignore_errors: yes
+
+            - name: Set registry address
+              set_fact:
+                registry: "http://{{ routeregistry.stdout | from_json | json_query('spec.host') }}"
+
+        - name: Check DNS registry 
+          command: nslookup "{{ registry | urlsplit('hostname') }}"
+          register: checkdnsregistry
+          changed_when: false
+          retries: 15
+          until: checkdnsregistry is succeeded
+          delay: 30
+
+        - name: Check DNS API
+          command: nslookup "{{ showserver.stdout | trim | urlsplit('hostname') }}"
+          register: checkdnsapi
+          changed_when: false
+
+        - name: Cluster-info
+          command: oc cluster-info
+          register: clusterinfo
+          changed_when: false
+
+        - name: Create project
+          command: oc new-project managed-namespace-operator
+          register: newproject
+
+        - name: Create Temp dir
+          tempfile:
+            state: directory
+            suffix: git
+          register: temp_dir
+
+        - name: print temp_dir
+          set_fact:
+            tmp_dir_path: '{{ temp_dir.path }}'
+
+
+        - name: copy git down
+          git: 
+            repo: https://github.com/rh-openshift-ansible-better-together/ops-track.git
+            dest: '{{ temp_dir.path }}/ops-track' 
+
+
+          #- name: log into registry
+
+          #- name: build image
+
+          #- name: push image
+
+          #- name: create crd
+
+          #- name: create manifests (clusterRole, clusterRoleBinding)
+
+          #- name: create service account
+
+          #- name: create operator
+          
+          #- name: Wait for wait for operator
+          #command: timeout 300 oc rollout status deploy/managed-namespace-operator -w -n managed-namespace-operator
+          #register: mnow
+          #changed_when: false
+          #retries: 2
+          #delay: 60
+          #until: mnow is succeeded
+
+        - name: Delete project
+          command: oc delete project managed-namespace-operator
+
+          #- name: clean up manifests (clusterRole, clusterRoleBinding)
+
+          #- name: clean up temp directory
+
+        - name: Switch back to default project
+          command: oc project default
+
+        - debug:
+            msg: "{{ item }}"
+          loop:
+            - "user.info: "
+            - "user.info: Cluster Validation"
+            - "user.info: DNS API ....................... {{ 'OK' if checkdnsapi.rc == 0 else 'FAIL' }}"
+            - "user.info: API ........................... {{ 'OK' if clusterinfo.rc == 0 else 'FAIL' }}"
+            - "user.info: DNS REGISTRY .................. {{ 'OK' if checkdnsregistry.rc == 0 else 'FAIL' }}"
+
+              #        - when:
+              #- smoke_tests | bool
+              #- >-
+              # checkdnswebconsole.rc != 0
+              #or checkdnsapi.rc != 0
+              #or testwebconsole is failed
+              #or clusterinfor.rc != 0
+              #or newproject.rc != 0
+              #or phpw.rc != 0
+              #or mysqlw.rc != 0
+              #or testroute is failed
+              #fail:
+              #msg: "FAIL Smoke tests"
+              #ignore_errors: no

@@ -1,0 +1,17 @@
+---
+## NOTE: We can run off of the vanilla OCP 4.3 cluster. I just went through and chose the variables that seem potentially relevant to us.
+
+## Need bastion host, but not sure if backpack makes this obsolete
+install_bastion: true
+
+install_ocp4: true
+ocp4_installer_version: '4.3.X'
+
+## Will need this injected into our docs for users to know where to log into
+cluster_name: "cluster-{{ guid }}"
+
+## SSH Keys
+#env_authorized_key: bt-key
+#ansible_ssh_private_key_file: '~/.ssh/{{ key_name }}'
+## ended up using ssh password for testing
+
