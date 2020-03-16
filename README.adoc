@@ -15,38 +15,73 @@ There are a few different tools you need in order to complete the lab:
 - git
 - oc
 
-[NOTE]
-##TODO:
-- usernames
-- env ID
-- login creds
-- hostnames
-- console/api access
+### 1.0 Preparation
+Each workshop participant is provisioned their own OpenShift Container Platform 4.3 cluster. Each cluster contains one master node, one infrastructure node, one application node, and one bastion host. You will be working from the bastion host to complete today's lab. 
+
+You'll need to claim your OpenShift cluster using our [OPS - Cluster Assignment Tool](https://bit.ly/2w3Jnh8). Once you get to the cluster assignment tool, you'll need two pieces of information:
+
+* Lab Code: `SummitVirtual - BetterTogether: Ansible + OpenShift`
+* Activation Key: `ansible+openshift`
+
+Once you enter the information into the cluster assignment tool, you'll receive a few pieces of information. It is important to keep this window open during the workshop. The first (and one of the most important) pieces of information you will receive is a "GUID" in the format `rht-<4_RANDOM_CHARACTERS>` (for example, `rht-j1e2`). It is important to keep this GUID handy for the rest of the lab. 
+
+To SSH to the bastion host, you'll need to download the private SSH key from the link provided in the cluster assignment tool. Select your operating system from the list and save the file to a location you remember. 
+
+For users who are running Linux, macOS, or Windows with the Windows Subsystem for Linux installed, open up a terminal and run the following commands:
+
+```
+chmod 600 <INSERT_PATH_TO_PRIVATE_KEY>/ocp-workshop.pem
+ssh -i <INSERT_PATH_TO_PRIVATE_KEY>/ocp-workshop.pem ec2-user@bastion.<INSERT_GUID_HERE>.open.redhat.com
+```
+
+For users who are running Windows and using PuTTY for SSH, follow the below directions:
+
+1. Open PuTTY. 
+2. In PuTTY, under _Category_ on the left, navigate to _Connection_ -> _SSH_ -> _Auth_.
+3. On the right under _Authentication_ parameters, click _Browse_ and locate the private key (ocp-workshop.ppk) you saved earlier.
+4. On the left, navigate to _Session_.
+5. On the right in the _Host Name_ field, ec2-user@bastion.<INSERT_GUID_HERE>.open.redhat.com
+6. Click _Open_.
+7. When prompted with the security alert, click _Yes_.
+
+Once you've got an active SSH session, you'll need to change to be the root user by running the following command and then we'll need to set your user ID for the workshop.
+
+```
+$ sudo su -
+$ export GUID=<INSERT_GUID_HERE>
+```
+
+.Cluster Info
+[options="header"]
+|=========================================================
+| Location | API Server | Web Console 
+| San Fransisco, CA | https://api.cluster-${GUID}.${GUID}.example.opentlc.com:6443 | https://master.${GUID}.open.redhat.com |
+|=========================================================
+
+Login with the username `opentlc-mgr` and the password `r3dh4t1!`
+To make it easier you can set an environment variable to reference your Username and API Server as these will be referenced a few times throughout this lab:
+```bash
+export OCP_USER=`opentlc-mgr`
+export API_SERVER=<api-server>  # Referenced in the above table
+```
+
+Since you are the administrator of the cluster, you will be running as admin. This is necessary in order to have the permissions necessary for setting up cluster scoped operators.
+
+Log into the UI by following your location's corresponding Web Console link from the table above. The login credentials are the same here as they were for `oc`.
+
+And finally, we need to login to the OpenShift cluster using the `oc` tools. To do so, run the following command:
+
+```
+$ oc login https://api.cluster-${GUID}.${GUID}.example.opentlc.com:6443
+``` 
+
+You are now ready to start working through the workshop.
 
 ### 1.1 Log in to OpenShift
 You'll need to log into OpenShift with the `oc` tool to talk to the cluster from the command line. You'll also want to log into the UI.
 
 See the table below for your location's cluster information.
 
-NOTE: ##TODO: update table
-
-.Cluster Info
-[options="header"]
-|=========================================================
-| Location | API Server | Web Console 
-| San Fransisco, CA | <api-endpoint> | <console-endpoint> |
-|=========================================================
-
-Set an environment variable to reference your username and API Server:
-```bash
-export OCP_USER=<assigned-username> # For example, user60
-export API_SERVER=<api-server>      # Referenced in the above table
-```
-NOTE: Will likely just use the admin creds like admin or opentlc-mgr
-
-Since you are the administrator of the cluster, you will be running as admin. This is necessary in order to have the permissions necessary for setting up cluster scoped operators.
-
-Log into the UI by following your location's corresponding Web Console link from the table above. The login credentials are the same here as they were for `oc`.
 
 ### 1.2 Create OpenShift Project
 You'll need to create an OpenShift namespace to deploy the operator into. Create a namespace with:
