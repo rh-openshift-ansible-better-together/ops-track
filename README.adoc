@@ -31,7 +31,7 @@ For users who are running Linux, macOS, or Windows with the Windows Subsystem fo
 
 ```
 chmod 600 <INSERT_PATH_TO_PRIVATE_KEY>/ocp-workshop.pem
-ssh -i <INSERT_PATH_TO_PRIVATE_KEY>/ocp-workshop.pem ec2-user@bastion.<INSERT_GUID_HERE>.open.redhat.com
+ssh -i <INSERT_PATH_TO_PRIVATE_KEY>/ocp-workshop.pem ec2-user@@bastion.${GUID}.example.opentlc.com
 ```
 
 For users who are running Windows and using PuTTY for SSH, follow the below directions:
@@ -55,7 +55,7 @@ $ export GUID=<INSERT_GUID_HERE>
 [options="header"]
 |=========================================================
 | Location | API Server | Web Console 
-| San Fransisco, CA | https://api.cluster-${GUID}.${GUID}.example.opentlc.com:6443 | https://master.${GUID}.open.redhat.com |
+| San Fransisco, CA | https://api.cluster-${GUID}.${GUID}.example.opentlc.com:6443 | https://console-openshift-console.apps.cluster-${GUID}.${GUID}.example.opentlc.com/ |
 |=========================================================
 
 Login with the username `opentlc-mgr` and the password `r3dh4t1!`
