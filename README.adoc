@@ -24,7 +24,9 @@ First, you'll need to claim your OpenShift cluster using our [Cluster Assignment
 * Activation Key: `ansible+openshift`
 * Email Address: `Your email`
 
-Once you enter the information into the cluster assignment tool, you'll receive a few pieces of information. It is important to keep _THIS_ window open during the workshop. The first (and one of the most important) pieces of information you will receive is a "GUID" in the format of `rht-<4_RANDOM_CHARACTERS>` (for example, `rht-j1e2`). It is important to keep this "GUID" handy for the rest of the lab. 
+Once you enter the information into the cluster assignment tool, you'll receive a few pieces of information. It is important to keep _THIS_ window open during the workshop. 
+
+The first (and one of the most important) pieces of information you will receive is a "GUID" in the format of `rht-<4_RANDOM_CHARACTERS>` (for example, `rht-j1e2`). It is important to keep this "GUID" handy for the rest of the lab. 
 
 Next, in order to SSH to the bastion host, you'll need to download the private SSH key from the link provided in the cluster assignment tool. 
 
@@ -62,7 +64,7 @@ And finally, we need to login to the OpenShift cluster using the `oc` tool.
 
 Since you are the administrator of the cluster, you will be running as admin. This is necessary in order to have the permissions necessary for setting up cluster scoped operators.
 
-Login with the username `opentlc-mgr` and the password `r3dh4t1!`
+NOTE: ^^Login with the username `opentlc-mgr` and the password `r3dh4t1!`
 
 ```
 $ oc login -u opentlc-mgr ${API_SERVER}
@@ -72,7 +74,7 @@ $ oc login -u opentlc-mgr ${API_SERVER}
 [options="header"]
 |=========================================================
 | Location | API Server | Web Console 
-| San Fransisco, CA | https://api.cluster-${GUID}.${GUID}.example.opentlc.com:6443 | https://console-openshift-console.apps.cluster-${GUID}.${GUID}.example.opentlc.com/ |
+| Virtual | https://api.cluster-${GUID}.${GUID}.open.redhat.com:6443 | http://console-openshift-console.apps.cluster-${GUID}.${GUID}.open.redhat.com |
 |=========================================================
 
 Log into the UI by following your location's corresponding Web Console link from the table above. The login credentials are the same here as they were for `oc` tool.
@@ -80,26 +82,23 @@ Log into the UI by following your location's corresponding Web Console link from
 You are now ready to start working through the workshop.
 
 ### 1.1 Log in to OpenShift
-
 You'll need to log into OpenShift with the `oc` tool to talk to the cluster from the command line. You'll also want to log into the UI.
 
 ### 1.2 Create OpenShift Project
-
 You'll need to create an OpenShift namespace to deploy the operator into. Create a namespace with:
+
 ```bash
-oc new-project managed-namespace-operator
+$ oc new-project managed-namespace-operator
 ```
-NOTE: ^^Probably can get moved to later
 
 ## 2 Login to the OpenShift Registry
-
 In this lab we're going to build a new operator with Ansible. The operator itself is simply a container image, so we need a place to store it so we can reference it in a future deployment. Traditionally, you would leverage a centralized (sp?) image registry like https://quay.io[quay.io]. However for the sake of keeping this workshop, we are going leverage the registry that comes with OpenShift. 
 
 Let's go checkout the registry
 
 ```.sh
-oc project openshift-image-registry
-oc get all 
+$ oc project openshift-image-registry
+$ oc get all 
 ```
 ....
 NAME                                                  READY   STATUS    RESTARTS   AGE
@@ -135,24 +134,51 @@ There is a lot going on in this project, but it is really just three application
 
 To log into the image registry, we will need the route that allows traffic into the pod. To get the specific url, run this command:
 ```.sh
-oc get route 
+$ oc get route 
 ```
-
-NOTE: ##TODO update route with rhpds domain
 ```yaml
 NAME            HOST/PORT                                                 PATH   SERVICES         PORT    TERMINATION   WILDCARD
 default-route   default-route-openshift-image-registry.apps-crc.testing          image-registry   <all>   reencrypt     None
 ```
+
 We'll need this location later. Let's save it as an environment variable.
 ```bash
-TARGET_REGISTRY=$(oc get route default-route -n openshift-image-registry --template={{.spec.host}})
+$ TARGET_REGISTRY=$(oc get route default-route -n openshift-image-registry --template={{.spec.host}})
 ```
 
-Now that we know where to log into, let's login with podman. Note that it uses your openshift session token. 
+Now that we know where to log into, lets make sure that we have docker setup correctly to allow this registry.
+
+1. As the user root, make sure docker is installed
+```
+$ docker info
+
+Containers: 0
+ Running: 0
+ Paused: 0
+ Stopped: 0
+Images: 0
+Server Version: 1.13.1
+Storage Driver: overlay2
+```
+2. If docker is not installed do the following
+```
+$ yum -y install docker && systemctl enable docker && systemctl restart docker
+```
+3. After verifying that docker is installed and its up and running, add ${TARGET_REGISTRY} to the insecure section of `/etc/containers/registries.conf`
+```
+$ vi /etc/containers/registries.conf
+
+[registries.insecure]
+registries = ['<OUTPUT OF $TARGET_REGISTRY>']
+```
+4. Restart docker to take effect
+```
+$ systemctl restart docker
+```
+5. Let's login with podman. Note that it uses your openshift session token. 
 ```bash
-docker login default-route-openshift-image-registry.apps-crc.testing -u openshift -p $(oc whoami -t) 
+docker login ${TARGET_REGISTRY} -u openshift -p $(oc whoami -t) 
 ```
-
 
 == 3 Review the Ansible Operator
 
