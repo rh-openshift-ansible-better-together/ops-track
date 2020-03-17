@@ -148,7 +148,7 @@ $ export TARGET_REGISTRY=$(oc get route default-route -n openshift-image-registr
 
 Now that we know where to log into, lets make sure that we have docker setup correctly to allow this registry.
 
-1. As the user root, make sure docker is installed
+*  As the user root, make sure docker is installed
 ```
 $ docker info
 
@@ -160,22 +160,22 @@ Images: 0
 Server Version: 1.13.1
 Storage Driver: overlay2
 ```
-2. If docker is not installed do the following
+* If docker is not installed do the following
 ```
 $ yum -y install docker && systemctl enable docker && systemctl restart docker
 ```
-3. After verifying that docker is installed and its up and running, add ${TARGET_REGISTRY} to the insecure section of `/etc/containers/registries.conf`
+*  After verifying that docker is installed and its up and running, add ${TARGET_REGISTRY} to the insecure section of `/etc/containers/registries.conf`
 ```
 $ vi /etc/containers/registries.conf
 
 [registries.insecure]
 registries = ['<OUTPUT OF $TARGET_REGISTRY>']
 ```
-4. Restart docker to take effect
+*  Restart docker to take effect
 ```
 $ systemctl restart docker
 ```
-5. Let's login with podman. Note that it uses your openshift session token. 
+*  Let's login with podman. Note that it uses your openshift session token. 
 ```bash
 docker login ${TARGET_REGISTRY} -u openshift -p $(oc whoami -t) 
 ```
