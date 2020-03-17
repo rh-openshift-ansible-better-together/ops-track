@@ -64,7 +64,7 @@ And finally, we need to login to the OpenShift cluster using the `oc` tool.
 
 Since you are the administrator of the cluster, you will be running as admin. This is necessary in order to have the permissions necessary for setting up cluster scoped operators.
 
-NOTE: ^^Login with the username `opentlc-mgr` and the password `r3dh4t1!`
+NOTE: Login with the username `opentlc-mgr` and the password `r3dh4t1!`
 
 ```
 $ oc login -u opentlc-mgr ${API_SERVER}
