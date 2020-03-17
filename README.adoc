@@ -143,7 +143,7 @@ default-route   default-route-openshift-image-registry.apps-crc.testing         
 
 We'll need this location later. Let's save it as an environment variable.
 ```bash
-$ TARGET_REGISTRY=$(oc get route default-route -n openshift-image-registry --template={{.spec.host}})
+$ export TARGET_REGISTRY=$(oc get route default-route -n openshift-image-registry --template={{.spec.host}})
 ```
 
 Now that we know where to log into, lets make sure that we have docker setup correctly to allow this registry.
